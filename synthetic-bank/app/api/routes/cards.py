@@ -1,15 +1,23 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.session import get_db
 
+from app.core.customer_context import require_customer_context
 from app.schemas.card import CardResponse
 from app.schemas.card_transaction import CardTransactionResponse
-
 from app.services.card_service import CardService
-from app.services.card_transaction_service import CardTransactionService
+from app.services.card_transaction_service import (
+    CardTransactionService,
+)
 
 
 router = APIRouter(
@@ -18,20 +26,29 @@ router = APIRouter(
 )
 
 card_service = CardService()
-transaction_service = CardTransactionService()
+card_transaction_service = CardTransactionService()
 
 
 @router.get(
     "/{card_id}",
     response_model=CardResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_card(
     card_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     card = await card_service.get_card(
         db,
         card_id,
+        tenant_id,
+        customer_id,
     )
 
     if card is None:
@@ -46,14 +63,23 @@ async def get_card(
 @router.post(
     "/{card_id}/block",
     response_model=CardResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def block_card(
     card_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     card = await card_service.block_card(
         db,
         card_id,
+        tenant_id,
+        customer_id,
     )
 
     if card is None:
@@ -62,21 +88,19 @@ async def block_card(
             detail="Card not found",
         )
 
-    if card.status not in {"blocked"}:
-        raise HTTPException(
-            status_code=409,
-            detail=f"Card cannot be blocked from status '{card.status}'",
-        )
-
     return card
 
 
 @router.get(
     "/{card_id}/transactions",
     response_model=list[CardTransactionResponse],
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_card_transactions(
     card_id: uuid.UUID,
+    request: Request,
     limit: int = Query(
         default=20,
         ge=1,
@@ -88,9 +112,14 @@ async def get_card_transactions(
     ),
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     card = await card_service.get_card(
         db,
         card_id,
+        tenant_id,
+        customer_id,
     )
 
     if card is None:
@@ -99,9 +128,10 @@ async def get_card_transactions(
             detail="Card not found",
         )
 
-    return await transaction_service.get_card_transactions(
+    return await card_transaction_service.get_card_transactions(
         db,
         card_id,
+        tenant_id,
         limit,
         offset,
     )

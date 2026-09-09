@@ -12,11 +12,16 @@ class LoanRepository:
         self,
         db: AsyncSession,
         loan_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+        customer_id: uuid.UUID,
     ) -> Loan | None:
 
         result = await db.execute(
-            select(Loan)
-            .where(Loan.id == loan_id)
+            select(Loan).where(
+                Loan.id == loan_id,
+                Loan.tenant_id == tenant_id,
+                Loan.customer_id == customer_id,
+            )
         )
 
         return result.scalar_one_or_none()
@@ -25,6 +30,7 @@ class LoanRepository:
         self,
         db: AsyncSession,
         customer_id: uuid.UUID,
+        tenant_id: uuid.UUID,
         limit: int = 20,
         offset: int = 0,
     ) -> list[Loan]:
@@ -32,7 +38,8 @@ class LoanRepository:
         result = await db.execute(
             select(Loan)
             .where(
-                Loan.customer_id == customer_id
+                Loan.customer_id == customer_id,
+                Loan.tenant_id == tenant_id,
             )
             .order_by(
                 Loan.created_at.desc(),

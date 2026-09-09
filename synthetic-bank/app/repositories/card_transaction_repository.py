@@ -12,6 +12,7 @@ class CardTransactionRepository:
         self,
         db: AsyncSession,
         card_id: uuid.UUID,
+        tenant_id: uuid.UUID,
         limit: int = 20,
         offset: int = 0,
     ) -> list[CardTransaction]:
@@ -19,7 +20,8 @@ class CardTransactionRepository:
         result = await db.execute(
             select(CardTransaction)
             .where(
-                CardTransaction.card_id == card_id
+                CardTransaction.card_id == card_id,
+                CardTransaction.tenant_id == tenant_id,
             )
             .order_by(
                 CardTransaction.transaction_at.desc(),
