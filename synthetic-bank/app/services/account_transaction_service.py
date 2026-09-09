@@ -16,12 +16,14 @@ class AccountTransactionService:
         self,
         db: AsyncSession,
         account_id: uuid.UUID,
+        tenant_id: uuid.UUID,
         limit: int = 20,
         offset: int = 0,
     ):
         return await self.repository.get_by_account_id(
             db,
             account_id,
+            tenant_id,
             limit,
             offset,
         )

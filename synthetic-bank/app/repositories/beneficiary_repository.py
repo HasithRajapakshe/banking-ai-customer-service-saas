@@ -13,12 +13,16 @@ class BeneficiaryRepository:
         self,
         db: AsyncSession,
         beneficiary_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+        customer_id: uuid.UUID,
     ) -> Beneficiary | None:
 
         result = await db.execute(
-            select(Beneficiary)
-            .where(
-                Beneficiary.id == beneficiary_id
+            select(Beneficiary).where(
+                Beneficiary.id == beneficiary_id,
+                Beneficiary.tenant_id == tenant_id,
+                Beneficiary.customer_id == customer_id,
+                Beneficiary.status != "deleted",
             )
         )
 
@@ -28,6 +32,7 @@ class BeneficiaryRepository:
         self,
         db: AsyncSession,
         customer_id: uuid.UUID,
+        tenant_id: uuid.UUID,
         limit: int = 20,
         offset: int = 0,
     ) -> list[Beneficiary]:
@@ -36,6 +41,7 @@ class BeneficiaryRepository:
             select(Beneficiary)
             .where(
                 Beneficiary.customer_id == customer_id,
+                Beneficiary.tenant_id == tenant_id,
                 Beneficiary.status != "deleted",
             )
             .order_by(
