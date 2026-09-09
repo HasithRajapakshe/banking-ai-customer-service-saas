@@ -1,0 +1,100 @@
+# =========================
+# Environment
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+.venv/
+venv/
+env/
+
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# Node
+# =========================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+.next/
+dist/
+build/
+coverage/
+
+# =========================
+# IDE
+# =========================
+.vscode/
+.idea/
+
+*.swp
+*.swo
+
+# =========================
+# OS
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# Docker
+# =========================
+docker-compose.override.yml
+
+# =========================
+# Secrets
+# =========================
+*.pem
+*.key
+*.crt
+
+secrets/
+credentials/
+
+# =========================
+# Database
+# =========================
+*.sqlite
+*.sqlite3
+
+# =========================
+# Temporary files
+# =========================
+tmp/
+temp/
+.cache/
+
+# =========================
+# AI / ML
+# =========================
+*.pt
+*.pth
+*.onnx
+*.h5
+*.pkl
+*.joblib
+
+# =========================
+# Generated data
+# =========================
+data/generated/
+synthetic-bank/data/docs/01_Proposal_v2.0.docx
