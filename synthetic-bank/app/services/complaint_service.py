@@ -17,22 +17,28 @@ class ComplaintService:
         self,
         db: AsyncSession,
         complaint_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+        customer_id: uuid.UUID,
     ):
         return await self.repository.get_by_id(
             db,
             complaint_id,
+            tenant_id,
+            customer_id,
         )
 
     async def get_customer_complaints(
         self,
         db: AsyncSession,
         customer_id: uuid.UUID,
+        tenant_id: uuid.UUID,
         limit: int = 20,
         offset: int = 0,
     ):
         return await self.repository.get_by_customer_id(
             db,
             customer_id,
+            tenant_id,
             limit,
             offset,
         )

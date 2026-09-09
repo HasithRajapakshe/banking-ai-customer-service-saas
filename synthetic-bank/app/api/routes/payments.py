@@ -1,10 +1,17 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.session import get_db
 
+from app.core.customer_context import require_customer_context
 from app.schemas.payment import (
     PaymentCreateRequest,
     PaymentResponse,
@@ -20,34 +27,20 @@ router = APIRouter(
 payment_service = PaymentService()
 
 
-@router.get(
-    "/{payment_id}",
-    response_model=PaymentResponse,
-)
-async def get_payment(
-    payment_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-):
-    payment = await payment_service.get_payment(
-        db,
-        payment_id,
-    )
-
-    if payment is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Payment not found",
-        )
-
-    return payment
-
+# =========================
+# Customer Payment List
+# =========================
 
 @router.get(
     "/customer/{customer_id}",
     response_model=list[PaymentResponse],
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def list_customer_payments(
     customer_id: uuid.UUID,
+    request: Request,
     limit: int = Query(
         default=20,
         ge=1,
@@ -59,37 +52,46 @@ async def list_customer_payments(
     ),
     db: AsyncSession = Depends(get_db),
 ):
+    trusted_customer_id = request.state.customer_id
+    tenant_id = request.state.tenant_id
+
+    if customer_id != trusted_customer_id:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer not found",
+        )
+
     return await payment_service.get_customer_payments(
         db,
-        customer_id,
+        trusted_customer_id,
+        tenant_id,
         limit,
         offset,
     )
 
 
+# =========================
+# Create Payment
+# =========================
+
 @router.post(
     "/customer/{customer_id}",
     response_model=PaymentResponse,
     status_code=201,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def create_payment(
     customer_id: uuid.UUID,
     data: PaymentCreateRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    # Temporary synthetic-bank tenant resolution.
-    # Tenant validation will move into the security layer later.
-    from sqlalchemy import select
-    from app.models.customer import Customer
+    trusted_customer_id = request.state.customer_id
+    tenant_id = request.state.tenant_id
 
-    result = await db.execute(
-        select(Customer)
-        .where(Customer.id == customer_id)
-    )
-
-    customer = result.scalar_one_or_none()
-
-    if customer is None:
+    if customer_id != trusted_customer_id:
         raise HTTPException(
             status_code=404,
             detail="Customer not found",
@@ -97,23 +99,36 @@ async def create_payment(
 
     return await payment_service.create_payment(
         db,
-        customer_id,
-        customer.tenant_id,
+        trusted_customer_id,
+        tenant_id,
         data,
     )
 
 
+# =========================
+# Payment Status
+# =========================
+
 @router.get(
     "/{payment_id}/status",
     response_model=PaymentResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_payment_status(
     payment_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     payment = await payment_service.get_payment(
         db,
         payment_id,
+        tenant_id,
+        customer_id,
     )
 
     if payment is None:
@@ -125,17 +140,30 @@ async def get_payment_status(
     return payment
 
 
+# =========================
+# Cancel Payment
+# =========================
+
 @router.post(
     "/{payment_id}/cancel",
     response_model=PaymentResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def cancel_payment(
     payment_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     payment = await payment_service.cancel_payment(
         db,
         payment_id,
+        tenant_id,
+        customer_id,
     )
 
     if payment is None:
@@ -144,15 +172,39 @@ async def cancel_payment(
             detail="Payment not found",
         )
 
-    if payment.status not in {
-        "cancelled",
-    }:
+    return payment
+
+
+# =========================
+# Get Payment
+# =========================
+
+@router.get(
+    "/{payment_id}",
+    response_model=PaymentResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
+)
+async def get_payment(
+    payment_id: uuid.UUID,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
+    payment = await payment_service.get_payment(
+        db,
+        payment_id,
+        tenant_id,
+        customer_id,
+    )
+
+    if payment is None:
         raise HTTPException(
-            status_code=409,
-            detail=(
-                f"Payment cannot be cancelled "
-                f"from status '{payment.status}'"
-            ),
+            status_code=404,
+            detail="Payment not found",
         )
 
     return payment

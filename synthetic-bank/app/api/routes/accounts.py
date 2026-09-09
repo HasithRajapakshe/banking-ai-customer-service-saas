@@ -1,9 +1,17 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.session import get_db
+
+from app.core.customer_context import require_customer_context
 from app.schemas.account import (
     AccountBalanceResponse,
     AccountResponse,
@@ -27,14 +35,23 @@ transaction_service = AccountTransactionService()
 @router.get(
     "/{account_id}",
     response_model=AccountResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_account(
     account_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     account = await account_service.get_account(
         db,
         account_id,
+        customer_id,
+        tenant_id,
     )
 
     if account is None:
@@ -49,14 +66,23 @@ async def get_account(
 @router.get(
     "/{account_id}/balance",
     response_model=AccountBalanceResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_account_balance(
     account_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     account = await account_service.get_account_balance(
         db,
         account_id,
+        customer_id,
+        tenant_id,
     )
 
     if account is None:
@@ -77,16 +103,32 @@ async def get_account_balance(
 @router.get(
     "/{account_id}/transactions",
     response_model=list[AccountTransactionResponse],
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_account_transactions(
     account_id: uuid.UUID,
-    limit: int = Query(default=20, ge=1, le=100),
-    offset: int = Query(default=0, ge=0),
+    request: Request,
+    limit: int = Query(
+        default=20,
+        ge=1,
+        le=100,
+    ),
+    offset: int = Query(
+        default=0,
+        ge=0,
+    ),
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     account = await account_service.get_account(
         db,
         account_id,
+        customer_id,
+        tenant_id,
     )
 
     if account is None:
@@ -98,6 +140,7 @@ async def get_account_transactions(
     return await transaction_service.get_account_transactions(
         db,
         account_id,
+        tenant_id,
         limit,
         offset,
     )

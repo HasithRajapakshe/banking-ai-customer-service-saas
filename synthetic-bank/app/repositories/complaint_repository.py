@@ -12,12 +12,15 @@ class ComplaintRepository:
         self,
         db: AsyncSession,
         complaint_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+        customer_id: uuid.UUID,
     ) -> Complaint | None:
 
         result = await db.execute(
-            select(Complaint)
-            .where(
-                Complaint.id == complaint_id
+            select(Complaint).where(
+                Complaint.id == complaint_id,
+                Complaint.tenant_id == tenant_id,
+                Complaint.customer_id == customer_id,
             )
         )
 
@@ -27,6 +30,7 @@ class ComplaintRepository:
         self,
         db: AsyncSession,
         customer_id: uuid.UUID,
+        tenant_id: uuid.UUID,
         limit: int = 20,
         offset: int = 0,
     ) -> list[Complaint]:
@@ -34,7 +38,8 @@ class ComplaintRepository:
         result = await db.execute(
             select(Complaint)
             .where(
-                Complaint.customer_id == customer_id
+                Complaint.customer_id == customer_id,
+                Complaint.tenant_id == tenant_id,
             )
             .order_by(
                 Complaint.created_at.desc(),

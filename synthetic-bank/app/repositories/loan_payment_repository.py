@@ -12,6 +12,7 @@ class LoanPaymentRepository:
         self,
         db: AsyncSession,
         loan_id: uuid.UUID,
+        tenant_id: uuid.UUID,
         limit: int = 20,
         offset: int = 0,
     ) -> list[LoanPayment]:
@@ -19,10 +20,12 @@ class LoanPaymentRepository:
         result = await db.execute(
             select(LoanPayment)
             .where(
-                LoanPayment.loan_id == loan_id
+                LoanPayment.loan_id == loan_id,
+                LoanPayment.tenant_id == tenant_id,
             )
             .order_by(
-                LoanPayment.installment_number.asc()
+                LoanPayment.installment_number.asc(),
+                LoanPayment.id.asc(),
             )
             .limit(limit)
             .offset(offset)

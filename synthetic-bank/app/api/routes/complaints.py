@@ -1,12 +1,17 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import select
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.session import get_db
 
-from app.models.customer import Customer
+from app.core.customer_context import require_customer_context
 from app.schemas.complaint import (
     ComplaintCreateRequest,
     ComplaintResponse,
@@ -26,9 +31,13 @@ complaint_service = ComplaintService()
 @router.get(
     "/customer/{customer_id}",
     response_model=list[ComplaintResponse],
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def list_customer_complaints(
     customer_id: uuid.UUID,
+    request: Request,
     limit: int = Query(
         default=20,
         ge=1,
@@ -40,9 +49,19 @@ async def list_customer_complaints(
     ),
     db: AsyncSession = Depends(get_db),
 ):
+    trusted_customer_id = request.state.customer_id
+    tenant_id = request.state.tenant_id
+
+    if customer_id != trusted_customer_id:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer not found",
+        )
+
     return await complaint_service.get_customer_complaints(
         db,
-        customer_id,
+        trusted_customer_id,
+        tenant_id,
         limit,
         offset,
     )
@@ -52,22 +71,20 @@ async def list_customer_complaints(
     "/customer/{customer_id}",
     response_model=ComplaintResponse,
     status_code=201,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def create_complaint(
     customer_id: uuid.UUID,
     data: ComplaintCreateRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(Customer)
-        .where(
-            Customer.id == customer_id
-        )
-    )
+    trusted_customer_id = request.state.customer_id
+    tenant_id = request.state.tenant_id
 
-    customer = result.scalar_one_or_none()
-
-    if customer is None:
+    if customer_id != trusted_customer_id:
         raise HTTPException(
             status_code=404,
             detail="Customer not found",
@@ -75,8 +92,8 @@ async def create_complaint(
 
     return await complaint_service.create_complaint(
         db,
-        customer_id,
-        customer.tenant_id,
+        trusted_customer_id,
+        tenant_id,
         data,
     )
 
@@ -84,14 +101,23 @@ async def create_complaint(
 @router.get(
     "/{complaint_id}/status",
     response_model=ComplaintStatusResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_complaint_status(
     complaint_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     complaint = await complaint_service.get_complaint(
         db,
         complaint_id,
+        tenant_id,
+        customer_id,
     )
 
     if complaint is None:
@@ -114,14 +140,23 @@ async def get_complaint_status(
 @router.get(
     "/{complaint_id}",
     response_model=ComplaintResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_complaint(
     complaint_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     complaint = await complaint_service.get_complaint(
         db,
         complaint_id,
+        tenant_id,
+        customer_id,
     )
 
     if complaint is None:

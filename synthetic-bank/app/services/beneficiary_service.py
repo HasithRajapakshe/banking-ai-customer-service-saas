@@ -13,26 +13,41 @@ class BeneficiaryService:
     def __init__(self):
         self.repository = BeneficiaryRepository()
 
+    @staticmethod
+    def mask_account_number(account_number: str) -> str:
+        cleaned = account_number.strip()
+
+        if len(cleaned) <= 4:
+            return cleaned
+
+        return "*" * (len(cleaned) - 4) + cleaned[-4:]
+
     async def get_beneficiary(
         self,
         db: AsyncSession,
         beneficiary_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+        customer_id: uuid.UUID,
     ):
         return await self.repository.get_by_id(
             db,
             beneficiary_id,
+            tenant_id,
+            customer_id,
         )
 
     async def get_customer_beneficiaries(
         self,
         db: AsyncSession,
         customer_id: uuid.UUID,
+        tenant_id: uuid.UUID,
         limit: int = 20,
         offset: int = 0,
     ):
         return await self.repository.get_by_customer_id(
             db,
             customer_id,
+            tenant_id,
             limit,
             offset,
         )
@@ -45,13 +60,6 @@ class BeneficiaryService:
         data: BeneficiaryCreateRequest,
     ):
         now = datetime.now(timezone.utc)
-
-        account_number = data.account_number.strip()
-
-        masked_account = (
-            "*" * max(len(account_number) - 4, 0)
-            + account_number[-4:]
-        )
 
         beneficiary = Beneficiary(
             id=uuid.uuid4(),
@@ -66,7 +74,9 @@ class BeneficiaryService:
                 if data.bank_name
                 else None
             ),
-            account_number_masked=masked_account,
+            account_number_masked=self.mask_account_number(
+                data.account_number
+            ),
             status="active",
             created_at=now,
             updated_at=now,
@@ -81,17 +91,18 @@ class BeneficiaryService:
         self,
         db: AsyncSession,
         beneficiary_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+        customer_id: uuid.UUID,
     ):
         beneficiary = await self.repository.get_by_id(
             db,
             beneficiary_id,
+            tenant_id,
+            customer_id,
         )
 
         if beneficiary is None:
             return None
-
-        if beneficiary.status == "deleted":
-            return beneficiary
 
         return await self.repository.deactivate(
             db,
