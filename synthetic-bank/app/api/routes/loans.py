@@ -1,10 +1,17 @@
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.session import get_db
 
+from app.core.customer_context import require_customer_context
 from app.schemas.loan import (
     LoanResponse,
     LoanStatusResponse,
@@ -24,9 +31,13 @@ loan_service = LoanService()
 @router.get(
     "/customer/{customer_id}",
     response_model=list[LoanResponse],
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def list_customer_loans(
     customer_id: uuid.UUID,
+    request: Request,
     limit: int = Query(
         default=20,
         ge=1,
@@ -38,9 +49,19 @@ async def list_customer_loans(
     ),
     db: AsyncSession = Depends(get_db),
 ):
+    trusted_customer_id = request.state.customer_id
+    tenant_id = request.state.tenant_id
+
+    if customer_id != trusted_customer_id:
+        raise HTTPException(
+            status_code=404,
+            detail="Customer not found",
+        )
+
     return await loan_service.get_customer_loans(
         db,
-        customer_id,
+        trusted_customer_id,
+        tenant_id,
         limit,
         offset,
     )
@@ -49,9 +70,13 @@ async def list_customer_loans(
 @router.get(
     "/{loan_id}/payments",
     response_model=list[LoanPaymentResponse],
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_loan_payments(
     loan_id: uuid.UUID,
+    request: Request,
     limit: int = Query(
         default=20,
         ge=1,
@@ -63,9 +88,14 @@ async def get_loan_payments(
     ),
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     loan = await loan_service.get_loan(
         db,
         loan_id,
+        tenant_id,
+        customer_id,
     )
 
     if loan is None:
@@ -77,6 +107,7 @@ async def get_loan_payments(
     return await loan_service.get_loan_payments(
         db,
         loan_id,
+        tenant_id,
         limit,
         offset,
     )
@@ -85,14 +116,23 @@ async def get_loan_payments(
 @router.get(
     "/{loan_id}/status",
     response_model=LoanStatusResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_loan_status(
     loan_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     loan = await loan_service.get_loan(
         db,
         loan_id,
+        tenant_id,
+        customer_id,
     )
 
     if loan is None:
@@ -116,14 +156,23 @@ async def get_loan_status(
 @router.get(
     "/{loan_id}",
     response_model=LoanResponse,
+    dependencies=[
+        Depends(require_customer_context),
+    ],
 )
 async def get_loan(
     loan_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    tenant_id = request.state.tenant_id
+    customer_id = request.state.customer_id
+
     loan = await loan_service.get_loan(
         db,
         loan_id,
+        tenant_id,
+        customer_id,
     )
 
     if loan is None:

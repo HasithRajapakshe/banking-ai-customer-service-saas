@@ -1,7 +1,6 @@
 import uuid
-from datetime import datetime, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.card import Card
@@ -13,11 +12,16 @@ class CardRepository:
         self,
         db: AsyncSession,
         card_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+        customer_id: uuid.UUID,
     ) -> Card | None:
 
         result = await db.execute(
-            select(Card)
-            .where(Card.id == card_id)
+            select(Card).where(
+                Card.id == card_id,
+                Card.tenant_id == tenant_id,
+                Card.customer_id == customer_id,
+            )
         )
 
         return result.scalar_one_or_none()
@@ -25,27 +29,10 @@ class CardRepository:
     async def block(
         self,
         db: AsyncSession,
-        card_id: uuid.UUID,
-    ) -> Card | None:
-
-        result = await db.execute(
-            select(Card)
-            .where(Card.id == card_id)
-        )
-
-        card = result.scalar_one_or_none()
-
-        if card is None:
-            return None
-
-        if card.status == "blocked":
-            return card
-
-        if card.status != "active":
-            return card
+        card: Card,
+    ) -> Card:
 
         card.status = "blocked"
-        card.blocked_at = datetime.now(timezone.utc)
 
         await db.commit()
         await db.refresh(card)
