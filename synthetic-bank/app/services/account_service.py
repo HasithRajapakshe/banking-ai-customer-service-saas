@@ -17,9 +17,9 @@ class AccountService:
         tenant_id: uuid.UUID,
     ):
         return await self.repository.get_by_customer_id(
-            db,
-            customer_id,
-            tenant_id,
+            db=db,
+            customer_id=customer_id,
+            tenant_id=tenant_id,
         )
 
     async def get_account(
@@ -30,13 +30,13 @@ class AccountService:
         tenant_id: uuid.UUID,
     ):
         return await self.repository.get_by_id(
-            db,
-            account_id,
-            customer_id,
-            tenant_id,
+            db=db,
+            account_id=account_id,
+            customer_id=customer_id,
+            tenant_id=tenant_id,
         )
 
-    async def get_account_balance(
+    async def get_balance(
         self,
         db: AsyncSession,
         account_id: uuid.UUID,
@@ -44,8 +44,8 @@ class AccountService:
         tenant_id: uuid.UUID,
     ):
         return await self.repository.get_by_id(
-            db,
-            account_id,
-            customer_id,
-            tenant_id,
+            db=db,
+            account_id=account_id,
+            customer_id=customer_id,
+            tenant_id=tenant_id,
         )
