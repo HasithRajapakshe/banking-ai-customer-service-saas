@@ -32,6 +32,10 @@ account_service = AccountService()
 transaction_service = AccountTransactionService()
 
 
+# =========================
+# Get Account
+# =========================
+
 @router.get(
     "/{account_id}",
     response_model=AccountResponse,
@@ -48,10 +52,10 @@ async def get_account(
     customer_id = request.state.customer_id
 
     account = await account_service.get_account(
-        db,
-        account_id,
-        customer_id,
-        tenant_id,
+        db=db,
+        account_id=account_id,
+        customer_id=customer_id,
+        tenant_id=tenant_id,
     )
 
     if account is None:
@@ -62,6 +66,10 @@ async def get_account(
 
     return account
 
+
+# =========================
+# Get Account Balance
+# =========================
 
 @router.get(
     "/{account_id}/balance",
@@ -78,11 +86,11 @@ async def get_account_balance(
     tenant_id = request.state.tenant_id
     customer_id = request.state.customer_id
 
-    account = await account_service.get_account_balance(
-        db,
-        account_id,
-        customer_id,
-        tenant_id,
+    account = await account_service.get_balance(
+        db=db,
+        account_id=account_id,
+        customer_id=customer_id,
+        tenant_id=tenant_id,
     )
 
     if account is None:
@@ -99,6 +107,10 @@ async def get_account_balance(
         available_balance=account.available_balance,
     )
 
+
+# =========================
+# Get Account Transactions
+# =========================
 
 @router.get(
     "/{account_id}/transactions",
@@ -124,11 +136,13 @@ async def get_account_transactions(
     tenant_id = request.state.tenant_id
     customer_id = request.state.customer_id
 
+    # First verify that the account belongs to the
+    # configured bank and trusted customer.
     account = await account_service.get_account(
-        db,
-        account_id,
-        customer_id,
-        tenant_id,
+        db=db,
+        account_id=account_id,
+        customer_id=customer_id,
+        tenant_id=tenant_id,
     )
 
     if account is None:
@@ -138,9 +152,9 @@ async def get_account_transactions(
         )
 
     return await transaction_service.get_account_transactions(
-        db,
-        account_id,
-        tenant_id,
-        limit,
-        offset,
+        db=db,
+        account_id=account_id,
+        tenant_id=tenant_id,
+        limit=limit,
+        offset=offset,
     )
