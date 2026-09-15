@@ -3,6 +3,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.routes import (
+    accounts_router,
+    beneficiaries_router,
+    cards_router,
+    complaints_router,
+    customers_router,
+    loans_router,
+    payments_router,
+)
 from app.core.config import settings
 from app.core.logging import setup_logging
 from app.core.middleware import CorrelationIdMiddleware
@@ -14,13 +23,10 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-# =========================
-# Lifespan
-# =========================
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     provider = get_banking_provider()
+
     await provider.start()
 
     logger.info(
@@ -37,10 +43,6 @@ async def lifespan(app: FastAPI):
     logger.info("Banking Adapter stopped")
 
 
-# =========================
-# Application
-# =========================
-
 app = FastAPI(
     title=settings.app_name,
     version="1.0.0",
@@ -54,10 +56,6 @@ app = FastAPI(
 app.add_middleware(CorrelationIdMiddleware)
 
 
-# =========================
-# Health Check
-# =========================
-
 @app.get("/health")
 async def health():
     return {
@@ -68,10 +66,17 @@ async def health():
     }
 
 
-# =========================
-# Development Routes
-# =========================
+# Production/internal API
+app.include_router(customers_router)
+app.include_router(accounts_router)
+app.include_router(cards_router)
+app.include_router(payments_router)
+app.include_router(beneficiaries_router)
+app.include_router(loans_router)
+app.include_router(complaints_router)
 
+
+# Development-only test endpoints
 if settings.app_env == "development":
     from app.api.routes.dev import dev_router
 

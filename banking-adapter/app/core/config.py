@@ -12,6 +12,9 @@ class Settings(BaseSettings):
     synthetic_bank_base_url: str
     synthetic_bank_api_key: str
 
+    # Tool Gateway -> Banking Adapter authentication
+    internal_api_key: str = "change-me"
+
     request_timeout_seconds: float = 10.0
 
     read_retry_attempts: int = 2

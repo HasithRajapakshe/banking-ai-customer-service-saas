@@ -1,57 +1,68 @@
 services:
-
   postgres:
     image: pgvector/pgvector:pg16
     container_name: banking-postgres
-    restart: unless-stopped
-
     environment:
-      POSTGRES_DB: banking_ai
-      POSTGRES_USER: banking_app
-      POSTGRES_PASSWORD: change_me
-
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5433:5432"
-
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U banking_app -d banking_ai"
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
         ]
       interval: 10s
       timeout: 5s
       retries: 5
-
 
   redis:
     image: redis:7-alpine
     container_name: banking-redis
-    restart: unless-stopped
-
     ports:
       - "6379:6379"
-
     volumes:
       - redis_data:/data
 
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "redis-cli",
-          "ping"
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  synthetic-bank:
+    build: ./synthetic-bank
+    container_name: synthetic-bank
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      INTERNAL_API_KEY: ${SYNTHETIC_BANK_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
 
+  banking-adapter:
+    build: ./banking-adapter
+    container_name: banking-adapter
+    ports:
+      - "8002:8002"
+    environment:
+      SYNTHETIC_BANK_BASE_URL: http://synthetic-bank:8000
+      SYNTHETIC_BANK_API_KEY: ${SYNTHETIC_BANK_API_KEY}
+      INTERNAL_API_KEY: ${BANKING_ADAPTER_API_KEY}
+    depends_on:
+      - synthetic-bank
+
+  tool-gateway:
+    build: ./tool-gateway
+    container_name: tool-gateway
+    ports:
+      - "8003:8003"
+    environment:
+      BANKING_ADAPTER_BASE_URL: http://banking-adapter:8002
+      BANKING_ADAPTER_API_KEY: ${BANKING_ADAPTER_API_KEY}
+    depends_on:
+      - banking-adapter
 
 volumes:
-
   postgres_data:
-
   redis_data:
