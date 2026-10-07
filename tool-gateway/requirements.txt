@@ -6,3 +6,4 @@ pydantic-settings==2.7.0
 pytest==8.3.4
 pytest-asyncio==0.25.0
 respx==0.23.1
+redis==5.2.1

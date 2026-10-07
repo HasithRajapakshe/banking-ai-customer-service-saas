@@ -21,4 +21,5 @@ class ToolResult(BaseModel):
     correlation_id: str
 
     requires_confirmation: bool = False
+    confirmation_challenge: str | None = None
     executed: bool = True

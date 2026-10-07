@@ -170,3 +170,4 @@ class ToolExecutionRequest(BaseModel):
     arguments: dict[str, Any] = Field(default_factory=dict)
 
     confirmed: bool = False
+    challenge_code: str | None = None

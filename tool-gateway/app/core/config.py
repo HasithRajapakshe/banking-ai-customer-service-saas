@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     banking_adapter_base_url: str = "http://127.0.0.1:8002"
     banking_adapter_api_key: str = "banking-adapter-dev-secret"
 
+    redis_url: str = "redis://localhost:6379/2"
+
     request_timeout_seconds: float = 10.0
 
     max_connections: int = 20

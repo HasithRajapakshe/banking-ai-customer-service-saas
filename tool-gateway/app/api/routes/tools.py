@@ -71,4 +71,5 @@ async def execute_tool(
         context=context,
         arguments=payload.arguments,
         confirmed=payload.confirmed,
+        challenge_code=payload.challenge_code,
     )

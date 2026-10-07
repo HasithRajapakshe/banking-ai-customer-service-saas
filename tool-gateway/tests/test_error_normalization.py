@@ -3,6 +3,7 @@
 import uuid
 
 import pytest
+from unittest.mock import patch, AsyncMock
 import respx
 from httpx import ASGITransport, AsyncClient, Response
 
@@ -13,7 +14,7 @@ from tests.conftest import (
     make_execute_payload,
 )
 
-BASE = "http://127.0.0.1:8002"
+BASE = "http://localhost:8002"
 
 
 @pytest.mark.asyncio(loop_scope="function")
@@ -180,15 +181,19 @@ async def test_mutation_not_retried():
             "currency": "USD",
         },
         confirmed=True,
-    )
-
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as client:
-        await client.post(
-            "/api/v1/tools/execute", json=payload
+            challenge_code="TEST_CHALLENGE_CODE",
         )
+
+    with patch("app.services.tool_gateway_service.confirmation_service.verify_and_consume_challenge", new_callable=AsyncMock) as mock_verify:
+        mock_verify.return_value = {"tool_name": payload["tool_name"], "arguments": payload["arguments"]}
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            await client.post(
+                "/api/v1/tools/execute", json=payload
+            )
 
     # Should have been called exactly once (no retry)
     assert call_count == 1
+

@@ -19,7 +19,7 @@ from tests.conftest import (
     make_execute_payload,
 )
 
-BASE = "http://127.0.0.1:8002"
+BASE = "http://localhost:8002"
 
 
 def _mock_get(path: str, json_data):
