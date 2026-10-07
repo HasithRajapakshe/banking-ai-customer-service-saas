@@ -1,6 +1,7 @@
 """Tests for mutation tools: confirmation gate, execution."""
 
 import uuid
+from unittest.mock import patch, AsyncMock
 
 import pytest
 import respx
@@ -18,7 +19,7 @@ from tests.conftest import (
     make_execute_payload,
 )
 
-BASE = "http://127.0.0.1:8002"
+BASE = "http://localhost:8002"
 
 
 # =========================
@@ -36,13 +37,15 @@ async def test_high_risk_unconfirmed_blocked():
         confirmed=False,
     )
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as client:
-        resp = await client.post(
-            "/api/v1/tools/execute", json=payload
-        )
+    with patch("app.services.tool_gateway_service.confirmation_service.verify_and_consume_challenge", new_callable=AsyncMock) as mock_verify:
+        mock_verify.return_value = {"tool_name": payload["tool_name"], "arguments": payload["arguments"]}
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            resp = await client.post(
+                "/api/v1/tools/execute", json=payload
+            )
 
     data = resp.json()
     assert data["success"] is False
@@ -67,13 +70,15 @@ async def test_critical_risk_unconfirmed_blocked():
         confirmed=False,
     )
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as client:
-        resp = await client.post(
-            "/api/v1/tools/execute", json=payload
-        )
+    with patch("app.services.tool_gateway_service.confirmation_service.verify_and_consume_challenge", new_callable=AsyncMock) as mock_verify:
+        mock_verify.return_value = {"tool_name": payload["tool_name"], "arguments": payload["arguments"]}
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            resp = await client.post(
+                "/api/v1/tools/execute", json=payload
+            )
 
     data = resp.json()
     assert data["success"] is False
@@ -174,15 +179,18 @@ async def test_confirmed_high_risk_executes():
         "card.block",
         arguments={"card_id": str(TEST_CARD_ID)},
         confirmed=True,
+            challenge_code="TEST_CHALLENGE_CODE",
     )
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as client:
-        resp = await client.post(
-            "/api/v1/tools/execute", json=payload
-        )
+    with patch("app.services.tool_gateway_service.confirmation_service.verify_and_consume_challenge", new_callable=AsyncMock) as mock_verify:
+        mock_verify.return_value = {"tool_name": payload["tool_name"], "arguments": payload["arguments"]}
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            resp = await client.post(
+                "/api/v1/tools/execute", json=payload
+            )
 
     data = resp.json()
     assert data["success"] is True
@@ -217,15 +225,18 @@ async def test_confirmed_critical_executes():
             "currency": "USD",
         },
         confirmed=True,
+            challenge_code="TEST_CHALLENGE_CODE",
     )
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as client:
-        resp = await client.post(
-            "/api/v1/tools/execute", json=payload
-        )
+    with patch("app.services.tool_gateway_service.confirmation_service.verify_and_consume_challenge", new_callable=AsyncMock) as mock_verify:
+        mock_verify.return_value = {"tool_name": payload["tool_name"], "arguments": payload["arguments"]}
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            resp = await client.post(
+                "/api/v1/tools/execute", json=payload
+            )
 
     data = resp.json()
     assert data["success"] is True
@@ -265,13 +276,15 @@ async def test_complaint_create_no_confirmation_needed():
         confirmed=False,
     )
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as client:
-        resp = await client.post(
-            "/api/v1/tools/execute", json=payload
-        )
+    with patch("app.services.tool_gateway_service.confirmation_service.verify_and_consume_challenge", new_callable=AsyncMock) as mock_verify:
+        mock_verify.return_value = {"tool_name": payload["tool_name"], "arguments": payload["arguments"]}
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            resp = await client.post(
+                "/api/v1/tools/execute", json=payload
+            )
 
     data = resp.json()
     assert data["success"] is True
@@ -297,13 +310,15 @@ async def test_beneficiary_create_unconfirmed_blocked():
         confirmed=False,
     )
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as client:
-        resp = await client.post(
-            "/api/v1/tools/execute", json=payload
-        )
+    with patch("app.services.tool_gateway_service.confirmation_service.verify_and_consume_challenge", new_callable=AsyncMock) as mock_verify:
+        mock_verify.return_value = {"tool_name": payload["tool_name"], "arguments": payload["arguments"]}
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            resp = await client.post(
+                "/api/v1/tools/execute", json=payload
+            )
 
     data = resp.json()
     assert data["success"] is False
@@ -322,13 +337,15 @@ async def test_beneficiary_deactivate_unconfirmed_blocked():
         confirmed=False,
     )
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as client:
-        resp = await client.post(
-            "/api/v1/tools/execute", json=payload
-        )
+    with patch("app.services.tool_gateway_service.confirmation_service.verify_and_consume_challenge", new_callable=AsyncMock) as mock_verify:
+        mock_verify.return_value = {"tool_name": payload["tool_name"], "arguments": payload["arguments"]}
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            resp = await client.post(
+                "/api/v1/tools/execute", json=payload
+            )
 
     data = resp.json()
     assert data["success"] is False
@@ -345,14 +362,17 @@ async def test_payment_cancel_unconfirmed_blocked():
         confirmed=False,
     )
 
-    async with AsyncClient(
-        transport=transport,
-        base_url="http://test",
-    ) as client:
-        resp = await client.post(
-            "/api/v1/tools/execute", json=payload
-        )
+    with patch("app.services.tool_gateway_service.confirmation_service.verify_and_consume_challenge", new_callable=AsyncMock) as mock_verify:
+        mock_verify.return_value = {"tool_name": payload["tool_name"], "arguments": payload["arguments"]}
+        async with AsyncClient(
+            transport=transport,
+            base_url="http://test",
+        ) as client:
+            resp = await client.post(
+                "/api/v1/tools/execute", json=payload
+            )
 
     data = resp.json()
     assert data["success"] is False
     assert data["error"]["code"] == "CONFIRMATION_REQUIRED"
+

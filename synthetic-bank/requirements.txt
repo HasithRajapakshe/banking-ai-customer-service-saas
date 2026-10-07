@@ -21,16 +21,16 @@ python-dotenv==1.0.1
 # ==========================================
 # AI Agent - LangChain / LangGraph
 # ==========================================
-langchain
-langchain-core
-langchain-community
-langgraph
+langchain==0.3.14
+langchain-core==0.3.29
+langchain-community==0.3.14
+langgraph==0.2.62
 
 # ==========================================
 # LLM Provider
 # Choose the provider you actually use
 # ==========================================
-langchain-openai
+langchain-openai==0.3.0
 
 # ==========================================
 # Synthetic Banking Data

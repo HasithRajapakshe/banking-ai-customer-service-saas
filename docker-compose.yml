@@ -27,6 +27,11 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   synthetic-bank:
     build: ./synthetic-bank
@@ -36,9 +41,22 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
       INTERNAL_API_KEY: ${SYNTHETIC_BANK_API_KEY}
+      BANK_CODE: ${BANK_CODE}
+      TENANT_ID: ${TENANT_ID}
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   banking-adapter:
     build: ./banking-adapter
@@ -50,7 +68,19 @@ services:
       SYNTHETIC_BANK_API_KEY: ${SYNTHETIC_BANK_API_KEY}
       INTERNAL_API_KEY: ${BANKING_ADAPTER_API_KEY}
     depends_on:
-      - synthetic-bank
+      synthetic-bank:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   tool-gateway:
     build: ./tool-gateway
@@ -61,7 +91,112 @@ services:
       BANKING_ADAPTER_BASE_URL: http://banking-adapter:8002
       BANKING_ADAPTER_API_KEY: ${BANKING_ADAPTER_API_KEY}
     depends_on:
-      - banking-adapter
+      banking-adapter:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ai-agent:
+    build: ./ai-agent
+    container_name: ai-agent
+    ports:
+      - "8004:8004"
+    environment:
+      APP_ENV: development
+      TOOL_GATEWAY_BASE_URL: http://tool-gateway:8003
+    depends_on:
+      tool-gateway:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8001:8001"
+    environment:
+      APP_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      TOOL_GATEWAY_BASE_URL: http://tool-gateway:8003
+      AI_AGENT_BASE_URL: http://ai-agent:8004
+      TENANT_ID: ${TENANT_ID}
+      SYNTHETIC_BANK_API_KEY: ${SYNTHETIC_BANK_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      ai-agent:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rag:
+    build: ./rag
+    container_name: rag-service
+    ports:
+      - "8005:8005"
+    environment:
+      APP_ENV: development
+      DATABASE_URL: ${DATABASE_URL}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8001
+    depends_on:
+      api-gateway:
+        condition: service_healthy
 
 volumes:
   postgres_data:

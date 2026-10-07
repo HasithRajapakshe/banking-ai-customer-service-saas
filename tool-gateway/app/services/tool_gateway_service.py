@@ -7,6 +7,7 @@ from app.schemas.context import ToolExecutionContext
 from app.schemas.result import ToolError, ToolResult
 from app.services.audit_service import audit_service
 from app.services.authorization_service import authorization_service
+from app.services.confirmation_service import confirmation_service
 from app.tools.registry import tool_registry
 
 
@@ -21,6 +22,7 @@ class ToolGatewayService:
         context: ToolExecutionContext,
         arguments: dict,
         confirmed: bool = False,
+        challenge_code: str | None = None,
     ) -> ToolResult:
         """
         Execute a registered banking tool through the Tool Gateway.
@@ -171,30 +173,58 @@ class ToolGatewayService:
         # ---------------------------------------------------------
         # 4. Deterministic confirmation gate
         # ---------------------------------------------------------
-        if tool.requires_confirmation and not confirmed:
-            audit_service.log_execution(
-                tool_name=tool.name,
-                context=context,
-                risk_level=tool.risk_level.value,
-                executed=False,
-                success=False,
-                error_code="CONFIRMATION_REQUIRED",
-            )
+        if tool.requires_confirmation:
+            if not confirmed or not challenge_code:
+                # Issue new challenge
+                try:
+                    new_challenge_code = await confirmation_service.create_challenge(tool.name, arguments, context)
+                except Exception:
+                    return ToolResult(
+                        success=False,
+                        tool_name=tool.name,
+                        risk_level=tool.risk_level,
+                        error=ToolError(code="INTERNAL_ERROR", message="Failed to create confirmation challenge."),
+                        correlation_id=context.correlation_id,
+                        executed=False,
+                    )
+                    
+                audit_service.log_execution(
+                    tool_name=tool.name,
+                    context=context,
+                    risk_level=tool.risk_level.value,
+                    executed=False,
+                    success=False,
+                    error_code="CONFIRMATION_REQUIRED",
+                )
 
-            return ToolResult(
-                success=False,
-                tool_name=tool.name,
-                risk_level=tool.risk_level,
-                error=ToolError(
-                    code="CONFIRMATION_REQUIRED",
-                    message=(
-                        "Explicit confirmation is required."
+                return ToolResult(
+                    success=False,
+                    tool_name=tool.name,
+                    risk_level=tool.risk_level,
+                    error=ToolError(
+                        code="CONFIRMATION_REQUIRED",
+                        message="Explicit confirmation is required.",
                     ),
-                ),
-                correlation_id=context.correlation_id,
-                requires_confirmation=True,
-                executed=False,
-            )
+                    correlation_id=context.correlation_id,
+                    requires_confirmation=True,
+                    confirmation_challenge=new_challenge_code,
+                    executed=False,
+                )
+            else:
+                # Verify existing challenge
+                verified_data = await confirmation_service.verify_and_consume_challenge(challenge_code, context)
+                if not verified_data or verified_data["tool_name"] != tool.name or verified_data["arguments"] != arguments:
+                    return ToolResult(
+                        success=False,
+                        tool_name=tool.name,
+                        risk_level=tool.risk_level,
+                        error=ToolError(
+                            code="CONFIRMATION_INVALID",
+                            message="Confirmation challenge expired, invalid, or parameters modified.",
+                        ),
+                        correlation_id=context.correlation_id,
+                        executed=False,
+                    )
 
         # ---------------------------------------------------------
         # 5. Strict tool argument validation
