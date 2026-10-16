@@ -77,6 +77,8 @@ class IntentRouter:
             return self._tool("list_accounts", "account.list", {"limit": 20, "offset": 0})
 
         if "balance" in text:
+            if not ids:
+                return self._tool("account_balance", "account.list", {"limit": 20, "offset": 0})
             return self._id_tool("account_balance", "account.get_balance", "account_id", ids)
 
         if "account" in text and "transaction" in text:
@@ -87,7 +89,7 @@ class IntentRouter:
         if "block" in text and "card" in text:
             return self._id_tool("block_card", "card.block", "card_id", ids)
 
-        if "card" in text and "transaction" in text:
+        if ("card" in text and "transaction" in text) or ("decline" in text and "transaction" in text):
             if not ids:
                 return self._clarify("card_transactions", "Please provide the card ID (UUID) whose transactions you want to view.")
             return self._tool("card_transactions", "card.get_transactions", {"card_id": ids[0], "limit": 20, "offset": 0})
