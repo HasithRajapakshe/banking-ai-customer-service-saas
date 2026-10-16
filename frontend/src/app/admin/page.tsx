@@ -34,7 +34,7 @@ export default function AdminDashboard() {
       } else {
         setMessage("Failed to upload document.");
       }
-    } catch (err) {
+    } catch {
       setMessage("Error uploading document.");
     } finally {
       setUploading(false);

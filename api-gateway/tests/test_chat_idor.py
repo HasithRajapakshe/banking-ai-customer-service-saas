@@ -1,6 +1,6 @@
 import pytest
 import uuid
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from httpx import AsyncClient, ASGITransport
 from main import app
 
@@ -18,8 +18,6 @@ async def override_get_db():
     mock_session = AsyncMock()
     yield mock_session
 
-app.dependency_overrides[app.dependency_overrides.get("get_current_active_user") or app.dependency_overrides.get("get_current_user") or None] = override_get_current_active_user
-# We will patch get_db manually in the tests since it depends on the mock behavior per test
 
 from app.api.dependencies import get_current_active_user, get_db
 
@@ -47,7 +45,7 @@ async def test_get_messages_idor(client, mock_db_session):
     # Mock db to return None (meaning it was filtered out by the WHERE clause in our code)
     # The code does: stmt = select(Conversation).where(Conversation.tenant_id == current_user.tenant_id, Conversation.customer_id == current_user.customer_id)
     # So if the DB returns None, our app returns 404
-    mock_result = AsyncMock()
+    mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = None
     mock_db_session.execute.return_value = mock_result
     
@@ -65,7 +63,7 @@ async def test_chat_with_agent_idor(client, mock_db_session):
         customer_id=uuid.UUID("55555555-5555-5555-5555-555555555555") # Different customer
     )
     
-    mock_result = AsyncMock()
+    mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = conv
     mock_db_session.execute.return_value = mock_result
     

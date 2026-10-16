@@ -1,19 +1,28 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { Send, CreditCard, Wallet, TrendingUp, Sparkles, User, Bot, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
+import type { Account } from "@/lib/types";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
-  toolResult?: any;
+  toolResult?: unknown;
+}
+
+async function fetchAccounts(): Promise<Account[] | null> {
+  const token = localStorage.getItem("token");
+  const res = await fetch("http://localhost:8001/api/v1/accounts", {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.ok ? res.json() : null;
 }
 
 export default function Dashboard() {
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   
   const [messages, setMessages] = useState<Message[]>([
@@ -25,30 +34,22 @@ export default function Dashboard() {
   const conversationId = useRef(uuidv4());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchAccounts();
+  const refreshAccounts = useCallback(() => {
+    return fetchAccounts()
+      .then(data => {
+        if (data) setAccounts(data);
+      })
+      .catch(e => console.error(e))
+      .finally(() => setLoadingAccounts(false));
   }, []);
+
+  useEffect(() => {
+    refreshAccounts();
+  }, [refreshAccounts]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
-
-  const fetchAccounts = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8001/api/v1/accounts", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAccounts(data);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoadingAccounts(false);
-    }
-  };
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,8 +85,8 @@ export default function Dashboard() {
       }]);
 
       // Refresh accounts in case the agent did something
-      fetchAccounts();
-    } catch (e) {
+      refreshAccounts();
+    } catch {
       setMessages(prev => [...prev, { 
         id: uuidv4(), 
         role: "assistant", 
@@ -207,7 +208,7 @@ export default function Dashboard() {
                   {msg.content}
                 </div>
                 
-                {msg.toolResult && (
+                {msg.toolResult != null && (
                   <div className="bg-black/40 border border-surface-border p-3 rounded-xl text-xs font-mono text-gray-400 overflow-x-auto max-w-full">
                     <pre>{JSON.stringify(msg.toolResult, null, 2)}</pre>
                   </div>

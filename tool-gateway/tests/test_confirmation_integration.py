@@ -1,141 +1,75 @@
-import pytest
+"""Integration tests for ConfirmationService against a live Redis (REDIS_URL)."""
+
 import uuid
+
+import pytest
+import pytest_asyncio
+
+from app.schemas.context import ToolExecutionContext
 from app.services.confirmation_service import ConfirmationService
 
-# Real instance for integration tests
-real_confirmation_service = ConfirmationService()
+TOOL_NAME = "payment.create"
+ARGUMENTS = {"amount": "100.00"}
+
+
+def make_context(**overrides) -> ToolExecutionContext:
+    values = {
+        "tenant_id": uuid.uuid4(),
+        "customer_id": uuid.uuid4(),
+        "user_id": uuid.uuid4(),
+        "conversation_id": uuid.uuid4(),
+        "correlation_id": str(uuid.uuid4()),
+    }
+    values.update(overrides)
+    return ToolExecutionContext(**values)
+
+
+@pytest_asyncio.fixture
+async def service():
+    # A fresh client per test so it binds to the test's event loop.
+    svc = ConfirmationService()
+    yield svc
+    await svc.redis_client.aclose()
+
 
 @pytest.mark.asyncio(loop_scope="function")
-async def test_redis_confirmation_flow():
-    tenant_id = uuid.uuid4()
-    customer_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    conversation_id = uuid.uuid4()
-    tool_name = "payment.create"
-    arguments = {"amount": "100.00"}
+async def test_redis_confirmation_flow(service):
+    context = make_context()
 
-    # 1. Create challenge
-    challenge = await real_confirmation_service.create_challenge(
-        tenant_id=tenant_id,
-        customer_id=customer_id,
-        user_id=user_id,
-        conversation_id=conversation_id,
-        tool_name=tool_name,
-        arguments=arguments,
-        risk_level="HIGH"
-    )
+    challenge_code = await service.create_challenge(TOOL_NAME, ARGUMENTS, context)
+    assert isinstance(challenge_code, str)
+    assert len(challenge_code) == 8
 
-    assert challenge is not None
-    assert challenge.challenge_code is not None
-    
-    # 2. Redis key exists (implicitly tested if verify succeeds)
-    
-    # 3. Correct user confirm -> operation succeeds
-    verified = await real_confirmation_service.verify_and_consume_challenge(
-        tenant_id=tenant_id,
-        customer_id=customer_id,
-        user_id=user_id,
-        conversation_id=conversation_id,
-        challenge_code=challenge.challenge_code
-    )
-    
+    verified = await service.verify_and_consume_challenge(challenge_code, context)
     assert verified is not None
-    assert verified["tool_name"] == tool_name
-    assert verified["arguments"] == arguments
-    
-    # 4. Second confirmation -> fails (already consumed)
-    verified_second = await real_confirmation_service.verify_and_consume_challenge(
-        tenant_id=tenant_id,
-        customer_id=customer_id,
-        user_id=user_id,
-        conversation_id=conversation_id,
-        challenge_code=challenge.challenge_code
-    )
-    assert verified_second is None
-    
-@pytest.mark.asyncio(loop_scope="function")
-async def test_redis_confirmation_wrong_user():
-    tenant_id = uuid.uuid4()
-    customer_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    conversation_id = uuid.uuid4()
-    tool_name = "payment.create"
-    arguments = {"amount": "100.00"}
+    assert verified["tool_name"] == TOOL_NAME
+    assert verified["arguments"] == ARGUMENTS
 
-    challenge = await real_confirmation_service.create_challenge(
-        tenant_id=tenant_id,
-        customer_id=customer_id,
-        user_id=user_id,
-        conversation_id=conversation_id,
-        tool_name=tool_name,
-        arguments=arguments,
-        risk_level="HIGH"
-    )
+    # Replay must fail: the challenge was consumed.
+    assert await service.verify_and_consume_challenge(challenge_code, context) is None
 
-    # Wrong user ID
-    verified = await real_confirmation_service.verify_and_consume_challenge(
-        tenant_id=tenant_id,
-        customer_id=customer_id,
-        user_id=uuid.uuid4(),
-        conversation_id=conversation_id,
-        challenge_code=challenge.challenge_code
-    )
-    assert verified is None
 
 @pytest.mark.asyncio(loop_scope="function")
-async def test_redis_confirmation_wrong_tenant():
-    tenant_id = uuid.uuid4()
-    customer_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    conversation_id = uuid.uuid4()
-    tool_name = "payment.create"
-    arguments = {"amount": "100.00"}
+async def test_redis_confirmation_wrong_user(service):
+    context = make_context()
+    challenge_code = await service.create_challenge(TOOL_NAME, ARGUMENTS, context)
 
-    challenge = await real_confirmation_service.create_challenge(
-        tenant_id=tenant_id,
-        customer_id=customer_id,
-        user_id=user_id,
-        conversation_id=conversation_id,
-        tool_name=tool_name,
-        arguments=arguments,
-        risk_level="HIGH"
-    )
+    other_user = context.model_copy(update={"user_id": uuid.uuid4()})
+    assert await service.verify_and_consume_challenge(challenge_code, other_user) is None
 
-    # Wrong tenant ID
-    verified = await real_confirmation_service.verify_and_consume_challenge(
-        tenant_id=uuid.uuid4(),
-        customer_id=customer_id,
-        user_id=user_id,
-        conversation_id=conversation_id,
-        challenge_code=challenge.challenge_code
-    )
-    assert verified is None
 
 @pytest.mark.asyncio(loop_scope="function")
-async def test_redis_confirmation_wrong_code():
-    tenant_id = uuid.uuid4()
-    customer_id = uuid.uuid4()
-    user_id = uuid.uuid4()
-    conversation_id = uuid.uuid4()
-    tool_name = "payment.create"
-    arguments = {"amount": "100.00"}
+async def test_redis_confirmation_wrong_tenant(service):
+    context = make_context()
+    challenge_code = await service.create_challenge(TOOL_NAME, ARGUMENTS, context)
 
-    await real_confirmation_service.create_challenge(
-        tenant_id=tenant_id,
-        customer_id=customer_id,
-        user_id=user_id,
-        conversation_id=conversation_id,
-        tool_name=tool_name,
-        arguments=arguments,
-        risk_level="HIGH"
-    )
+    other_tenant = context.model_copy(update={"tenant_id": uuid.uuid4()})
+    assert await service.verify_and_consume_challenge(challenge_code, other_tenant) is None
 
-    # Unknown code
-    verified = await real_confirmation_service.verify_and_consume_challenge(
-        tenant_id=tenant_id,
-        customer_id=customer_id,
-        user_id=user_id,
-        conversation_id=conversation_id,
-        challenge_code="invalid-code"
-    )
-    assert verified is None
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_redis_confirmation_wrong_code(service):
+    context = make_context()
+    await service.create_challenge(TOOL_NAME, ARGUMENTS, context)
+
+    assert await service.verify_and_consume_challenge("invalid-code", context) is None
