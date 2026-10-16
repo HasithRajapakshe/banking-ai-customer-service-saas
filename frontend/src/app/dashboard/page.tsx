@@ -79,8 +79,8 @@ export default function Dashboard() {
       setMessages(prev => [...prev, { 
         id: uuidv4(), 
         role: "assistant", 
-        content: data.response_message || "Done.",
-        toolResult: data.tool_result 
+        content: data.message || "Done.",
+        toolResult: data.data 
       }]);
 
       // Refresh accounts in case the agent did something
@@ -137,7 +137,7 @@ export default function Dashboard() {
                   
                   <div>
                     <p className="text-3xl font-bold text-white tracking-tight">
-                      {acc.currency} {parseFloat(acc.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                      {acc.currency} {parseFloat(acc.current_balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </motion.div>

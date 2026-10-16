@@ -53,6 +53,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return <div className="min-h-screen flex items-center justify-center bg-black"><div className="animate-pulse text-white">Loading Nexus Admin...</div></div>;
   }
 
+  const displayName =
+    [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
+    user?.email ||
+    "User";
+
+  const avatarLetter = displayName.charAt(0).toUpperCase();
+
   const navItems = [
     { name: "Knowledge Base", icon: Database, active: true },
     { name: "Users", icon: Users, active: false },
@@ -89,10 +96,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 border-t border-surface-border">
           <div className="flex items-center gap-3 px-4 py-3 bg-surface-hover rounded-xl mb-4">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white font-bold">
-              {user.full_name.charAt(0)}
+              {avatarLetter}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium text-white truncate">{user.full_name}</p>
+              <p className="text-sm font-medium text-white truncate">{displayName}</p>
               <p className="text-xs text-gray-500 truncate">{user.email}</p>
             </div>
           </div>

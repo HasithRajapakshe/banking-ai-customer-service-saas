@@ -40,6 +40,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return <div className="min-h-screen flex items-center justify-center bg-black"><div className="animate-pulse text-white">Loading Nexus...</div></div>;
   }
 
+  const displayName =
+    [user?.first_name, user?.last_name].filter(Boolean).join(" ") ||
+    user?.email ||
+    "User";
+
+  const avatarLetter = displayName.charAt(0).toUpperCase();
+
   const navItems = [
     { name: "Overview", icon: LayoutDashboard, active: true },
     { name: "Cards", icon: CreditCard, active: false },
@@ -77,10 +84,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="p-4 border-t border-surface-border">
           <div className="flex items-center gap-3 px-4 py-3 bg-surface-hover rounded-xl mb-4">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-purple-500 flex items-center justify-center text-white font-bold">
-              {user.full_name.charAt(0)}
+              {avatarLetter}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-medium text-white truncate">{user.full_name}</p>
+              <p className="text-sm font-medium text-white truncate">{displayName}</p>
               <p className="text-xs text-gray-500 truncate">{user.email}</p>
             </div>
           </div>
