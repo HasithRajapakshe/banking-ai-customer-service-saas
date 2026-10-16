@@ -42,11 +42,8 @@ register_default_tools()
 @pytest.fixture(autouse=True)
 def mock_confirmation_service(monkeypatch):
     async def mock_create_challenge(*args, **kwargs):
-        class Challenge:
-            def __init__(self):
-                self.challenge_code = "TEST_CHALLENGE_CODE"
-        return Challenge()
-    
+        return "TEST_CHALLENGE_CODE"
+
     monkeypatch.setattr('app.services.tool_gateway_service.confirmation_service.create_challenge', mock_create_challenge)
     
     # We don't globally mock verify_and_consume_challenge; it's patched individually where needed.

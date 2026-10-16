@@ -1,0 +1,20 @@
+# Normalize line endings: LF in the repository and in working copies, so
+# files copied into Linux containers (Dockerfiles, shell scripts, SQL) behave
+# the same on Windows and in CI.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary files: never touch line endings or attempt text diffs.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.docx binary
+*.woff binary
+*.woff2 binary

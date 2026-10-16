@@ -32,8 +32,8 @@ export default function LandingPage() {
       const data = await res.json();
       localStorage.setItem("token", data.access_token);
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Failed to login");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to login");
     } finally {
       setLoading(false);
     }

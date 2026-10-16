@@ -97,4 +97,5 @@ temp/
 # Generated data
 # =========================
 data/generated/
-synthetic-bank/data/docs/01_Proposal_v2.0.docx
+synthetic-bank/data/
+docs/01_Proposal_v2.0.docx

@@ -7,6 +7,7 @@ from unittest.mock import patch, AsyncMock
 import respx
 from httpx import ASGITransport, AsyncClient, Response
 
+from app.core.config import settings
 from main import app
 from tests.conftest import (
     TEST_ACCOUNT_ID,
@@ -14,7 +15,7 @@ from tests.conftest import (
     make_execute_payload,
 )
 
-BASE = "http://localhost:8002"
+BASE = settings.banking_adapter_base_url.rstrip("/")
 
 
 @pytest.mark.asyncio(loop_scope="function")

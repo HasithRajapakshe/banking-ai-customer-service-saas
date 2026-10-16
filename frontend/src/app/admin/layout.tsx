@@ -4,10 +4,11 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Shield, Database, Users, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { CurrentUser } from "@/lib/types";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");

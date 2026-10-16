@@ -1,7 +1,7 @@
 import pytest
 import uuid
 import json
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from httpx import AsyncClient, ASGITransport
 from main import app
 from app.core.security import create_refresh_token
@@ -12,9 +12,9 @@ def client():
     return AsyncClient(transport=transport, base_url="http://test")
 
 @pytest.mark.asyncio(loop_scope="function")
-@patch("app.api.routes.auth.redis_client.get")
-@patch("app.api.routes.auth.redis_client.delete")
-@patch("app.api.routes.auth.redis_client.set")
+@patch("app.api.routes.auth.redis_client.get", new_callable=AsyncMock)
+@patch("app.api.routes.auth.redis_client.delete", new_callable=AsyncMock)
+@patch("app.api.routes.auth.redis_client.set", new_callable=AsyncMock)
 async def test_refresh_token_rotation(mock_set, mock_delete, mock_get, client):
     # Mock redis session
     jti = str(uuid.uuid4())
@@ -23,7 +23,7 @@ async def test_refresh_token_rotation(mock_set, mock_delete, mock_get, client):
     
     # Mock DB
     mock_db = AsyncMock()
-    mock_result = AsyncMock()
+    mock_result = MagicMock()
     
     from app.models import AppUser
     mock_user = AppUser(
@@ -55,7 +55,7 @@ async def test_refresh_token_rotation(mock_set, mock_delete, mock_get, client):
     assert mock_set.called
 
 @pytest.mark.asyncio(loop_scope="function")
-@patch("app.api.routes.auth.redis_client.get")
+@patch("app.api.routes.auth.redis_client.get", new_callable=AsyncMock)
 async def test_refresh_token_revoked(mock_get, client):
     jti = str(uuid.uuid4())
     user_id = str(uuid.uuid4())

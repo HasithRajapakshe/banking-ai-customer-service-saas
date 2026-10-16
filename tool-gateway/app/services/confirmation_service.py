@@ -31,7 +31,6 @@ class ConfirmationService:
                 "customer_id": str(context.customer_id) if context.customer_id else None,
                 "user_id": str(context.user_id) if context.user_id else None,
                 "correlation_id": context.correlation_id,
-                "roles": context.roles,
             }
         }
         

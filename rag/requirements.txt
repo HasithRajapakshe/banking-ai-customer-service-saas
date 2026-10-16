@@ -13,5 +13,6 @@ langchain-core==0.3.29
 langchain-community==0.3.14
 langchain-openai==0.3.0
 langchain-postgres==0.0.12
-sentence-transformers
-pypdf
+pypdf==5.1.0
+pytest==8.3.4
+pytest-asyncio==0.25.0
