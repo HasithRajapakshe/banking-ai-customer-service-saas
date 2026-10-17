@@ -26,6 +26,25 @@ class CardRepository:
 
         return result.scalar_one_or_none()
 
+    async def get_by_customer_id(
+        self,
+        db: AsyncSession,
+        customer_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+    ) -> list[Card]:
+        result = await db.execute(
+            select(Card)
+            .where(
+                Card.customer_id == customer_id,
+                Card.tenant_id == tenant_id,
+            )
+            .order_by(
+                Card.card_type,
+                Card.card_last4,
+            )
+        )
+        return list(result.scalars().all())
+
     async def block(
         self,
         db: AsyncSession,

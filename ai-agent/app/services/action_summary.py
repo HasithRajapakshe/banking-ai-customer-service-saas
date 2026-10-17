@@ -37,7 +37,8 @@ class ActionSummaryService:
                 channel=channel,
                 correlation_id=correlation_id,
             )
-            return f"Block card ending {last4}" if last4 else f"Block card {card_id}"
+            # Never show the raw ID: it may have been resolved, not typed.
+            return f"Block card ending {last4}" if last4 else "Block your card"
 
         if tool_name == "payment.create":
             return (

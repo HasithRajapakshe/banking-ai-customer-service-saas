@@ -10,6 +10,18 @@ class CardService:
     def __init__(self):
         self.repository = CardRepository()
 
+    async def get_cards_by_customer(
+        self,
+        db: AsyncSession,
+        customer_id: uuid.UUID,
+        tenant_id: uuid.UUID,
+    ):
+        return await self.repository.get_by_customer_id(
+            db,
+            customer_id,
+            tenant_id,
+        )
+
     async def get_card(
         self,
         db: AsyncSession,

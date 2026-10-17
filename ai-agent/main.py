@@ -1,15 +1,28 @@
+import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+# Configure logging before importing the app: the model gateway is built at
+# import time and logs which provider is active.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
-from app.api.routes import chat_router
-from app.clients.tool_gateway_client import tool_gateway_client
-from app.core.config import settings
-from app.core.middleware import CorrelationIdMiddleware
+from app.core.pii import install_pii_masking  # noqa: E402
+
+install_pii_masking()
+
+from fastapi import FastAPI  # noqa: E402
+
+from app.api.routes import chat_router  # noqa: E402
+from app.clients.tool_gateway_client import tool_gateway_client  # noqa: E402
+from app.core.config import settings  # noqa: E402
+from app.core.middleware import CorrelationIdMiddleware  # noqa: E402
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    install_pii_masking()  # uvicorn configures its handlers after import
     await tool_gateway_client.start()
     yield
     await tool_gateway_client.close()

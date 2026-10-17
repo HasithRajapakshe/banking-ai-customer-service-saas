@@ -18,7 +18,7 @@ async def test_list_tools():
 
     tools = response.json()
     assert isinstance(tools, list)
-    assert len(tools) == 25
+    assert len(tools) == 26
 
     names = {t["name"] for t in tools}
     assert "account.get_balance" in names
@@ -32,6 +32,15 @@ async def test_list_tools():
         assert "risk_level" in tool
         assert "requires_confirmation" in tool
         assert "permission" in tool
+        assert tool["input_schema"]["type"] == "object"
+
+    by_name = {t["name"]: t for t in tools}
+    block = by_name["card.block"]["input_schema"]
+    assert block["required"] == ["card_id"]
+    assert block["properties"]["card_id"]["format"] == "uuid"
+    assert block["additionalProperties"] is False
+    assert by_name["card.list"]["input_schema"]["properties"] == {}
+    assert by_name["card.list"]["risk_level"] == "LOW"
 
 
 @pytest.mark.asyncio(loop_scope="function")

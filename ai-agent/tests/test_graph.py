@@ -14,9 +14,15 @@ BASE = {
 CONFIG = {"configurable": {"thread_id": "test_thread"}}
 
 @pytest.mark.asyncio
-async def test_graph_clarifies_missing_account_id():
-    state = await agent_graph.ainvoke({**BASE, "message": "I want to block my card"}, CONFIG)
-    assert "clarification" in state or "response_message" in state or "messages" in state
+async def test_graph_block_card_without_id_degrades_when_lookup_fails():
+    with patch(
+        "app.services.reference_resolver.tool_gateway_client.execute",
+        new=AsyncMock(side_effect=ConnectionError("tool-gateway down")),
+    ):
+        state = await agent_graph.ainvoke({**BASE, "message": "I want to block my card"}, CONFIG)
+    assert state["status"] == "completed"
+    assert state["response_message"] == "I couldn't look up your cards right now. Please try again shortly."
+    assert state.get("tool_result") is None  # nothing was executed
 
 @pytest.mark.asyncio
 async def test_graph_blocks_prompt_injection():

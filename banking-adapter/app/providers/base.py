@@ -83,6 +83,14 @@ class BankingProvider(ABC):
     # =========================
 
     @abstractmethod
+    async def get_cards(
+        self,
+        customer_id: uuid.UUID,
+        correlation_id: str | None = None,
+    ) -> list[CardDTO]:
+        pass
+
+    @abstractmethod
     async def get_card(
         self,
         customer_id: uuid.UUID,

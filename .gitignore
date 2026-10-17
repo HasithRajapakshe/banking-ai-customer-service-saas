@@ -104,3 +104,6 @@ docs/01_Proposal_v2.0.docx
 # Local database backups
 # =========================
 backups/
+
+# Evaluation reports produced by CI runs
+evaluation/results/*ci-*
