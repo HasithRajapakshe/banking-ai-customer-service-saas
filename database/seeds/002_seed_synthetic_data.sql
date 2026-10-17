@@ -126,7 +126,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('cae7a962-e733-4077-aca8-b5aeec3008c9', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'f209eda3-0db7-4624-b5ba-ddba21c7a27b', 'cognito-c310fb13-43d0-4231-8591-1e97654fc4d6', 'ahamed.fawzan2@example.com', 'c682a1886c886fdd692d8e3043750641249f21008b004585a82cca9e85dd0074', 'Ahamed', 'Fawzan', 'disabled');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -134,7 +134,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('cc30ddeb-cbe0-42af-a862-d78ebc4474e6', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'af339138-26c5-4dca-97ef-6b6a4183700d', 'cognito-8708d301-d1bd-4e4d-a63a-ada0496de613', 'aravind.kumar3@example.com', 'e722d6600580c0dac110784d57a0e844f7fd18504c2541ff943bf9a762552a89', 'Aravind', 'Kumar', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -142,7 +142,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('90a5d9da-b638-4068-bb1c-b2bd24217137', 'f498100f-80c4-467e-84ec-ebfe5470b442', '40b518ee-ffeb-46bf-9dff-8f44bf05aecf', 'cognito-67d3f12b-622c-4ef6-a3e3-46f8f2d04d63', 'janith.silva4@example.com', 'd23debbb06e804a39c4241f38c71085e7e2c7d71b23543997ffc34bf67dee085', 'Janith', 'Silva', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -150,7 +150,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('97115bc2-d714-48bc-ab89-0b62ae89361a', 'f498100f-80c4-467e-84ec-ebfe5470b442', '80923066-a131-4c4d-9b22-52ff799f6997', 'cognito-75001f31-58e8-469b-8919-d6f7da0af7f9', 'sahan.samarasinghe5@example.com', 'c08a80cb974dcb4f04bf11e89a2b20c791d5e6f63adee57ca9c01f6423d8aa0b', 'Sahan', 'Samarasinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -158,7 +158,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('1cd80f71-28ad-48a2-92a9-7e8b4a448dee', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'f211b24b-240a-4bae-8d1d-b94c5d20b2cc', 'cognito-b7a37614-7675-4aa4-be9d-200aae61fdb9', 'sachini.karunaratne6@example.com', '6f0cd7de97ecbe4a15c6ffbb7feb648154d0b29a354b0ffa3bd81677621b6a58', 'Sachini', 'Karunaratne', 'disabled');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -166,7 +166,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('cf37cb25-8677-4246-bb82-283874865be0', 'f498100f-80c4-467e-84ec-ebfe5470b442', '06c3e61a-29e5-4a82-a684-e1152a024ca6', 'cognito-10feb05a-c68b-4b40-9f82-bdb58b58cae0', 'dinuka.rathnayake7@example.com', '52e7b1a06fcb3e37c08ce013732cc782e8086dea03afd9e842e96803ff380a90', 'Dinuka', 'Rathnayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -174,7 +174,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('466c9d10-6ac5-4c4f-aacc-f8365cb4e774', 'f498100f-80c4-467e-84ec-ebfe5470b442', '9c457471-6393-4396-9252-597ff379ca47', 'cognito-3612d012-8930-4437-a055-1b83350d757d', 'dinesh.wickramasinghe8@example.com', 'e23c64c7d209b0697ccf5d47e73a01b3160b722c604459fcc2cd0f74894453d4', 'Dinesh', 'Wickramasinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -182,7 +182,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('8063f0d8-8a0a-49a9-a228-40f58b49d3be', 'f498100f-80c4-467e-84ec-ebfe5470b442', '6908ceb0-f6c9-4817-858b-29f7a5edebf1', 'cognito-79b05139-11be-4b97-85c7-edaf25cb9459', 'tharushi.karunaratne9@example.com', '7446928c048e5d7d263f13e76059955e8569f54c5279e771440eb49077640e49', 'Tharushi', 'Karunaratne', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -190,7 +190,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('dfc40e06-2d8d-40a5-a901-9bddba39e10d', 'f498100f-80c4-467e-84ec-ebfe5470b442', '1a4678ae-3e52-4509-b61b-d428be88bd70', 'cognito-e7e17764-dae9-4dfc-973c-1734dd7a9cd5', 'tharindu.senanayake10@example.com', 'e01f9dbfc90aa2264f3138ec534f5b85d74d1ff00f878cc879c5f5ce0ac1cba5', 'Tharindu', 'Senanayake', 'disabled');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -198,7 +198,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('6e2fae62-967f-450c-a723-e72e3853abe4', 'f498100f-80c4-467e-84ec-ebfe5470b442', '389c6142-d827-479c-a4e0-f1c7f34796bf', 'cognito-a03737b8-7e23-423e-867b-38598b45cffa', 'fathima.nazeera11@example.com', '19558d30eef07466ae45d10ceefe85041be091c6b76bdc778da80c5411b049bf', 'Fathima', 'Nazeera', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -206,7 +206,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('f9b59ffa-a633-4bbd-ab57-87c5ceaf57e3', 'f498100f-80c4-467e-84ec-ebfe5470b442', '80b3ad77-3882-4769-b3f3-8e07ed00d19b', 'cognito-f9f0d1ab-16f0-4ad1-86b5-89d73afa0ea1', 'suresh.kumar12@example.com', '2c4f437c49032f992918f1dd3efcab7dff8b88ae8bc056620121ca33383be49c', 'Suresh', 'Kumar', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -214,7 +214,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('06213f6b-f49f-43d2-b72a-42d2e7438bf4', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'bc28de5c-25be-432e-8adb-850a21e2e143', 'cognito-b3340b69-7d6a-4edf-bf2d-39484d625599', 'shenali.wijesinghe13@example.com', 'b331212b9417c7899b4417e3a60eadd51aa42e9ce47bd4e1e3cb534f9b3841d0', 'Shenali', 'Wijesinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -222,7 +222,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('888118d4-59f3-4963-95fb-0b3d59317064', 'f498100f-80c4-467e-84ec-ebfe5470b442', '6a5fb18a-8588-4aa8-8bc4-468781c4216e', 'cognito-2b4f513f-6f64-4db6-b66b-373831541b76', 'fathima.kumara14@example.com', '55da57d2a15d2df513b952d1581877f7dfdf6dfe48c00e459e08a79c3fafcfbd', 'Fathima', 'Kumara', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -230,7 +230,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('4ab9b3f4-7a16-4d73-ae23-bb400acb621c', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'eadb2a66-e91c-4eb9-902f-56ff87b0f5c1', 'cognito-d3da339d-5a7d-41e2-bc73-5f33681141b8', 'safiya.rahman15@example.com', '1b1461c1a5b884a56e0926cb1b39d4ee2252b989b6863c8454f0d8942e94a41d', 'Safiya', 'Rahman', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -238,7 +238,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('ec5f4568-5ac2-438b-a470-ecbd5e8786a8', 'f498100f-80c4-467e-84ec-ebfe5470b442', '6b17d452-d371-4d68-863a-2a4682110017', 'cognito-b6244981-d43e-4700-85e8-2f5548987322', 'sandun.kumara16@example.com', 'bd9cf085c5f04e7dc5d1b1f7602e5b2f78f7f05f7125a3ef0fd5b8fe323ce777', 'Sandun', 'Kumara', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -246,7 +246,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('392c978d-66d4-47a4-bafd-35baa59eca58', 'f498100f-80c4-467e-84ec-ebfe5470b442', '61a551f3-359a-4df6-af2d-98838f519922', 'cognito-4f41dc4b-a705-4e3b-882a-062cc538a567', 'fathima.rathnayake17@example.com', '7a171926f524b44838154c246f199e8bd70a39ecfecef55fb0c8b7e52b8d38eb', 'Fathima', 'Rathnayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -254,7 +254,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('75e96379-35fb-45f3-ae04-11c6e134f72a', 'f498100f-80c4-467e-84ec-ebfe5470b442', '570ff099-95f8-4674-9b0f-f79adf3284c4', 'cognito-211294ae-1331-43d5-89ae-857da8e1ed37', 'pradeep.kumar18@example.com', '348c069975de56dbf8e4f808fd3ae2f01ba4e3629f3293fd8c93611122002728', 'Pradeep', 'Kumar', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -262,7 +262,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('ff0c3dbb-0de0-4b97-b105-9a926a61301b', 'f498100f-80c4-467e-84ec-ebfe5470b442', '69fc36e6-dac6-4bea-b88d-dff28585e1cc', 'cognito-f107eb4d-1625-45d5-8cd8-7ce07512aaab', 'dinithi.wijesinghe19@example.com', 'e890be5635f41291867c75588fe3113ec3eab73b8ea4d7da82f0ac5417a4dc51', 'Dinithi', 'Wijesinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -270,7 +270,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('dc699783-985e-4c45-ad2b-ab742115b06b', 'f498100f-80c4-467e-84ec-ebfe5470b442', '1400373d-b3b2-4fb1-8cf3-fe188133089f', 'cognito-4363bb6e-119b-418d-83af-f1829ad51855', 'sewmi.silva20@example.com', 'a1c2321985143f9ad2d266dd5461012f16774e1eee82bd0fb21965290e784451', 'Sewmi', 'Silva', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -278,7 +278,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('a6dee252-fd27-4778-9bec-ba118460cc77', 'f498100f-80c4-467e-84ec-ebfe5470b442', '322076c8-73c0-4504-9e1a-2e857c0bca72', 'cognito-28414477-ed45-401b-ab0a-68cd72692f18', 'abdul.hameed21@example.com', 'cc6d5b4291935b20b84f89073455c890015b414091e4abf776a4373c6c3783b5', 'Abdul', 'Hameed', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -286,7 +286,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('0bc37757-e5d0-49f2-80d9-9d610b90b03b', 'f498100f-80c4-467e-84ec-ebfe5470b442', '30899869-a8be-4cc3-96bb-bd000e0b734e', 'cognito-637b318f-3a27-4746-92a6-7282f46fa98e', 'nethmi.herath22@example.com', '4cee142acf2d29574ebea9c9c472899c6da03aa016bce6a71463317f4fc4235c', 'Nethmi', 'Herath', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -294,7 +294,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('eb913399-03e5-4371-8807-3cc8b9fe39c2', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'e5889685-db9b-4322-8fe5-f56ee35b0a1c', 'cognito-68606653-ddbc-40d5-baad-6135524f5c58', 'aravind.kumar23@example.com', 'c3716c51eddd87a7eec336789185cb9a2a0ce0f4c0ae33f1802d8f8ce0bf59e8', 'Aravind', 'Kumar', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -302,7 +302,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('4cd764a8-e09a-46f2-b3f8-251270431914', 'f498100f-80c4-467e-84ec-ebfe5470b442', '5c539ee0-cd0a-4504-bb7c-81396668d548', 'cognito-0a60f602-7a10-4257-b440-7457bdd2dce1', 'ravindu.bandara24@example.com', '4c7dcfcd708feb2d6f7599be0b7d9b024381edf0132fa12e760d5132bd76fa4a', 'Ravindu', 'Bandara', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -310,7 +310,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('20081a43-94bc-4bc2-95e6-0b63eeb66255', 'f498100f-80c4-467e-84ec-ebfe5470b442', '861fc7da-209a-44d3-a83d-c35c82a6fbfc', 'cognito-46c02141-1de4-41aa-9965-ac6a60fc514f', 'pramod.senanayake25@example.com', '89df18cc4cbb2616c7485f595e4da2ba926462f6f7ff6552c168921a0737c014', 'Pramod', 'Senanayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -318,7 +318,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('177e1487-ad82-4278-830f-34b3f83e6ab5', 'f498100f-80c4-467e-84ec-ebfe5470b442', '7c7914d3-f8f9-4af6-a363-02b1bee65aed', 'cognito-a82cc5d3-c35f-4b01-9377-7a48e28fc139', 'pradeep.kumar26@example.com', '103e882f861a217ca37db435fad9b5d0d7234c9bac51bee68ae36cb47714659d', 'Pradeep', 'Kumar', 'disabled');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -326,7 +326,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('110a822b-7b11-4115-b39b-66f07bf3d1b0', 'f498100f-80c4-467e-84ec-ebfe5470b442', '79bcb05a-bf5e-4308-9a05-319c320ba717', 'cognito-9f255704-028b-4a61-a7a0-132a9eb33cec', 'sanduni.rajapaksha27@example.com', '21c0f9bf5941eea336798213a552b144bd2b53491dcac3f4540b649f6f1dfef9', 'Sanduni', 'Rajapaksha', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -334,7 +334,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('08349342-05ad-449c-9948-487f9e024835', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'f7857af4-7ad4-42f6-8fd8-f8c6d76cb539', 'cognito-f3bf8d3e-40c1-4ea0-af07-326dce660841', 'akila.senanayake28@example.com', '45f183baa2bf421581d7f08fecd0f2273d2a0256dcb1c0e8eb024a03993b4e1d', 'Akila', 'Senanayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -342,7 +342,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('b6f56760-8c6c-4157-89ad-6b0d5a9d1d10', 'f498100f-80c4-467e-84ec-ebfe5470b442', '5f646003-3a9c-4a59-990c-56b070270a46', 'cognito-807b730f-8f51-4c7e-8468-2ada4cc1716b', 'nimra.ahamed29@example.com', '3e0a87ab934584c987f728590fe2a077ce9a42e86ff6515534184e6e32b94f72', 'Nimra', 'Ahamed', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -350,7 +350,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('f3d7f9d6-8a03-441f-a35e-f9e9ab65ac17', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'd09b4d0a-8be9-4c5f-87c2-316557f0a351', 'cognito-4dd8bf39-287d-47b6-a92d-49aae52cdf8f', 'sandun.herath30@example.com', 'e723c20c3a36b6dfbffd40783eff1fb8e5311167ae0487e2741e90dba73b6610', 'Sandun', 'Herath', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -358,7 +358,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('d8f108d5-af12-4f75-98b9-c6d212f5e12c', 'f498100f-80c4-467e-84ec-ebfe5470b442', '4b679990-9bc9-4985-91fd-38f666e57443', 'cognito-6b7f0640-abc5-45e7-abc3-eaefa843fac1', 'nimal.dissanayake31@example.com', '9593dbedf482256bec645c72af0e5ee592dadb316a1546634d8445ae7d546d87', 'Nimal', 'Dissanayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -366,7 +366,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('4279c17e-b76e-4989-9387-5a21109f8a11', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'c06b3890-9ca4-4964-b679-ed5dc607eed5', 'cognito-ef515dd5-3846-4077-b91d-049196bc8649', 'abdul.hameed32@example.com', '8aa8d505cc98ea1125926c5fa506ad9a1b9f1dfd9337505fa8c25a93c738e7ef', 'Abdul', 'Hameed', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -374,7 +374,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('4ce5121b-87cd-4cd9-a787-4e4ea31deb8d', 'f498100f-80c4-467e-84ec-ebfe5470b442', '6cc0e016-32ec-4f76-aa75-d2a038732665', 'cognito-40112db4-9e05-40a7-aff1-13a036b2a2fc', 'safiya.rahman33@example.com', '15ad9e01d587330e37ced05232c7c56d21543a59aad92d4ecdf20433c455d4e5', 'Safiya', 'Rahman', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -382,7 +382,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('e0f7b101-c1b0-4e17-b227-46f3b2fd8e77', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'e675ceb3-37f0-43ab-a52f-bfd9b3445bb2', 'cognito-c10dea09-dc03-4bc1-8734-596f03d580da', 'safiya.rahman34@example.com', 'ce67c3851180d0ae9a37375742e01ece430c958e55c158977cc4dfba4e4a55ee', 'Safiya', 'Rahman', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -390,7 +390,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('106dd8e2-f2f9-41a1-9993-50e80d786ee8', 'f498100f-80c4-467e-84ec-ebfe5470b442', '1eab25f5-8905-4a8b-88e1-ff43cec75d0a', 'cognito-c106fe2b-7bb9-4373-99c6-93ed4d69f63c', 'nethmi.ekanayake35@example.com', 'bc5366e1740125bda2048c3a9836ed4fa4ee949da350c487c3aeb738ca1ea37c', 'Nethmi', 'Ekanayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -398,7 +398,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('5a558ece-5fc0-47e1-8a0f-10f864351d44', 'f498100f-80c4-467e-84ec-ebfe5470b442', '49b39a65-814d-4d23-afa2-9e2691141313', 'cognito-96425fd3-36bb-4386-8cfb-5366f63d668f', 'mohamed.rizwan36@example.com', 'a4e8f6fec9c4d6b07a922d21f832d6f1c15f97bd790d092e170d9ac73bcb3ac1', 'Mohamed', 'Rizwan', 'disabled');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -406,7 +406,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('077eb988-2c57-4246-8cc0-3c1a8bea8e61', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'bca40b1f-5f39-4029-a12f-94893b703b30', 'cognito-91b22ff7-81df-458c-8459-bfd457231844', 'sharmila.raj37@example.com', '4f810abdc42979d0f7db025637726dab36ac458a38a092ec5207b1e4f3d26ee2', 'Sharmila', 'Raj', 'locked');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -414,7 +414,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('a987263f-b053-45ff-b7dc-79c56866ce26', 'f498100f-80c4-467e-84ec-ebfe5470b442', '5da6de71-c59e-4cf0-a481-53c673ab459a', 'cognito-1a267800-ad2b-4854-8479-1f0d4f8e7d56', 'amaya.wickramasinghe38@example.com', 'd923a222ee91019088ec8a90b1956ca562d6e9fb3bdcb07fc41674abe9c55fd5', 'Amaya', 'Wickramasinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -422,7 +422,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('b6c92f1d-fe7b-48bd-88aa-6ab8f019a02f', 'f498100f-80c4-467e-84ec-ebfe5470b442', '08cff1ac-5586-4842-ab79-09fa690f75ba', 'cognito-f7156c2e-2894-4c08-ae3a-8ee16393ecc9', 'malith.silva39@example.com', '26b9a077b57a3c987d97eb762c136abf42ef48a0007856dc33c672364f67535a', 'Malith', 'Silva', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -430,7 +430,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('87aa6911-3a04-4a01-a029-f8d3a13de802', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'cfb01b10-118d-43dc-aa3b-c1c4927049f2', 'cognito-05e200cc-e08c-4d01-a0d6-b9837f11f5d5', 'tharindu.wickramasinghe40@example.com', '20f55191669c08bd12f188f2bd5968ec6e4a1d629f003ef9327c309c10e45228', 'Tharindu', 'Wickramasinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -438,7 +438,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('fa882667-c762-4817-bde3-dcf7adbacff9', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'baf96b02-3ea7-4e41-8d96-a7b17ab1a571', 'cognito-91b6db9a-b7c4-486a-81bb-2547519cff47', 'meena.raj41@example.com', '7c6d868eb8a9c2596a0380988fd0f30f063a6d365801ec5428135421fdd9caec', 'Meena', 'Raj', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -446,7 +446,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('cd1e789f-e1b1-489c-a4dc-5d0f1609284f', 'f498100f-80c4-467e-84ec-ebfe5470b442', '9427ecba-2f6d-46c2-bfe1-185388b7749c', 'cognito-857bd9e2-56e3-4021-80e8-4155e028d080', 'ravindu.ekanayake42@example.com', 'd61843f6520362c5ce864c949c6f6f5bf35b5b523c947fe7fa76246ee2bbbf4c', 'Ravindu', 'Ekanayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -454,7 +454,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('52e5ea16-c20c-410f-8a3f-9079374f862a', 'f498100f-80c4-467e-84ec-ebfe5470b442', '95234beb-985d-4d10-9c94-69877688040c', 'cognito-7b987042-4843-4853-9d04-3aa1678f802f', 'dilani.bandara43@example.com', '2928dd28fa685c0df1d0d115912bb4dd1f3428fd0165ff64d56fe0c2612be6ba', 'Dilani', 'Bandara', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -462,7 +462,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('5c61a942-b6aa-4b6b-b236-796f596b33d4', 'f498100f-80c4-467e-84ec-ebfe5470b442', '594c43e4-43e1-4afe-81c5-03b87591d203', 'cognito-e23f3ea3-fd47-40ad-bfff-e37177bc2399', 'hansika.bandara44@example.com', '69687b0a6ea7dd59a68efe1f57e76cb72fb0e41c966732e70832feadc49949a7', 'Hansika', 'Bandara', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -470,7 +470,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('6db3d3f0-686b-40fd-9532-fb9f651c72ca', 'f498100f-80c4-467e-84ec-ebfe5470b442', '36799b54-ad57-44a7-a6b1-fc12eecb2f50', 'cognito-e116454d-3dd4-4ebc-a6e0-66aa4821b5ef', 'pramod.ekanayake45@example.com', '2997211d8f43c0078e9b2c71f3df5bd7713cafeb893357cfab3028bc66029c06', 'Pramod', 'Ekanayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -478,7 +478,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('7fce2e87-7093-4230-92e3-ac9f0088c99a', 'f498100f-80c4-467e-84ec-ebfe5470b442', '66fda4d3-f75b-4798-840b-403d591f89a2', 'cognito-554a58ac-3250-44c9-90a1-84fbbacbf547', 'piumi.kumara46@example.com', '07ee538f95b164370d50e6b1505bbc3016a93df89d72b7e6aadd89493e2a8bbd', 'Piumi', 'Kumara', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -486,7 +486,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('e6c04c12-faa5-46e5-8b55-1c03c0c65c31', 'f498100f-80c4-467e-84ec-ebfe5470b442', '5f50e579-c621-4bca-8ffc-917dabf78f84', 'cognito-9b233987-4723-4292-90da-17e63269ed51', 'ayesha.farook47@example.com', '7714681ee1da86cae537aee313f5be82b6087f0e6c778865112f5345e689dc0e', 'Ayesha', 'Farook', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -494,7 +494,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('c31b35c3-1b52-4f1f-8cdf-6e4d927592cb', 'f498100f-80c4-467e-84ec-ebfe5470b442', '636bc183-c8ad-4439-9350-32c06ef35bba', 'cognito-78f45b1b-ee96-4d44-9b4a-b10f5843e5b9', 'janani.raj48@example.com', '1a0028274077fa943c847fdb961646928d689f4331fcf67bde8042bdba0bbb2a', 'Janani', 'Raj', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -502,7 +502,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('e61225a2-3a85-46b5-b96f-376f6a3f4740', 'f498100f-80c4-467e-84ec-ebfe5470b442', '5a63e947-7061-4c15-8c63-a6bd29ffda5a', 'cognito-c5695078-9a1b-41f9-9deb-2f4d429a6ae5', 'mohamed.rizwan49@example.com', 'd6711f2b8f991614fb0dc7f2e020a0515c00ef0091bc4e39dacb4fabba106707', 'Mohamed', 'Rizwan', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -510,7 +510,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('f07ac430-fc3f-4f3f-b6b2-7c5b5fea2b47', 'f498100f-80c4-467e-84ec-ebfe5470b442', '9759176b-d46e-4258-9760-c49b41d1d2c7', 'cognito-56a59540-d4ae-4903-a0df-37200b41e6ef', 'naveen.senanayake50@example.com', '8dd1fe812b7b73b9547ba62d02b29cf8f9c9fd83a8115be93df0f3b631890c22', 'Naveen', 'Senanayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -518,7 +518,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('dcc7d0b5-ba6c-4600-98d9-c969029b1e25', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'bc387cf0-e497-4cf7-9e46-412c5f9ae79b', 'cognito-59324dbc-441e-4cc1-8494-c7ed9dfee7dc', 'sachini.ekanayake51@example.com', 'af791e0736c32123ec7213c04f9fc9ac1824e03319065de48aac584606de9d52', 'Sachini', 'Ekanayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -526,7 +526,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('f1d0f646-a4d9-4a47-af62-a224ca3912c2', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'e257190e-87a1-48fd-93df-2635b05cafc6', 'cognito-cf77c068-96a7-463b-83c1-a225254b5128', 'fathima.rizana52@example.com', 'd0cf62a8d0a95b525eb5394806116bfbb7ba4a2ed810322ec5ecde1be6a3c607', 'Fathima', 'Rizana', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -534,7 +534,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('184b4199-a541-4783-9f2d-cf84be2e42d8', 'f498100f-80c4-467e-84ec-ebfe5470b442', '2ebea54b-8bf9-483e-8464-6b727d0a23ac', 'cognito-3fe90699-a2d9-494c-aa6a-c8183517dc95', 'deepika.raj53@example.com', 'f6ba224aa71186ba6ca9a0b637ae4077726542b490716f1565a68c04fe728a59', 'Deepika', 'Raj', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -542,7 +542,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('dabd1f4d-e35c-460a-98a5-c2fcc69a2ed7', 'f498100f-80c4-467e-84ec-ebfe5470b442', '3f4c1aba-4381-45e1-9317-f84aa3bb1bfd', 'cognito-6a722d4d-af7c-4c11-b504-180aa5650195', 'nimal.karunaratne54@example.com', '3fc0e0486b59f214e887289ea879515cca9b462047c895785ffb7869165ea50d', 'Nimal', 'Karunaratne', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -550,7 +550,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('a9b00095-6dac-4356-b7f2-ab2252dfa585', 'f498100f-80c4-467e-84ec-ebfe5470b442', '28a4b646-e089-4565-9586-478e7dd778b4', 'cognito-1299004f-8074-4f3f-a7cd-37bc796a5c51', 'isuri.gunawardena55@example.com', '5d92bbd277d03e6bb1db869286311d14c6bc006a0c17c7acf39274e3c980c879', 'Isuri', 'Gunawardena', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -558,7 +558,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('349238f0-1c91-4d63-99a2-a56c21cb1d09', 'f498100f-80c4-467e-84ec-ebfe5470b442', '673ef85a-51a2-4234-97fe-65c455edb0f5', 'cognito-0fd09c6e-b986-47a2-8777-1aa104694e22', 'chamod.ekanayake56@example.com', '9930c2c8b86207b3e07d97c84dc8378229700d52b78824d7f6b0d5f34b1c357e', 'Chamod', 'Ekanayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -566,7 +566,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('00532baa-8cd7-4f84-843e-494a5c01bb96', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'de56a06e-b569-4b02-b50d-85ebedf33483', 'cognito-be6992a6-1c59-4863-9633-e7e76029d143', 'kavindu.herath57@example.com', 'a3787335da2396e53943ac0661f4d9f19fb5e405b72144dc2d5bde55de6ea851', 'Kavindu', 'Herath', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -574,7 +574,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('08d31503-bc91-46a1-9fd0-eee23aa664b7', 'f498100f-80c4-467e-84ec-ebfe5470b442', '1ba48c62-77d0-4d7d-a712-c1c67c7461b8', 'cognito-e58a64a1-98f2-44e6-8cd8-a3d1570784af', 'akila.gunawardena58@example.com', 'd5cd0b88bf3ffe973b8f3ae33b6efa37f81fb4ed58aa7c0a9aaf17937f2de25b', 'Akila', 'Gunawardena', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -582,7 +582,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('2404c96f-f2dc-480a-ad74-55750099ef73', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'd81be0e6-c415-4a71-abc1-860c24974afe', 'cognito-1168f961-a702-4c73-ba83-efd1d422cb3c', 'supun.wijesinghe59@example.com', '8391de59d6f15b5ccecc1db4a12e948cd75ef17f2b4f3ba3edc71a2a3b54e16b', 'Supun', 'Wijesinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -590,7 +590,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('e83e9cf5-6cee-44a8-a817-7911a91f5c64', 'f498100f-80c4-467e-84ec-ebfe5470b442', '3f66c916-63ab-4ac4-a8da-deb039bac95c', 'cognito-42dd2ef1-8c69-4352-b516-588b7c5aeb35', 'janith.wijesinghe60@example.com', 'beaf0689c0be40ab755bffccb68913fc3e954f0db5c3f12c0019b343bd513cd5', 'Janith', 'Wijesinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -598,7 +598,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('4a441daa-47e7-4a15-8330-0d4339d945d2', 'f498100f-80c4-467e-84ec-ebfe5470b442', '3d7416e0-5a69-46f5-9bc6-97e06584cf00', 'cognito-7b75c129-a8b5-482f-8b42-89084575311e', 'vihangi.wickramasinghe61@example.com', '3d98659ff21797d8edaead953d68514d11a05b9a01513d785979cb5d505e1b3a', 'Vihangi', 'Wickramasinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -606,7 +606,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('e96d2788-f9bd-4aee-ad25-713587d5e3cd', 'f498100f-80c4-467e-84ec-ebfe5470b442', '5f695079-da87-45a2-8a9c-b778600b2c32', 'cognito-0013193d-0daf-4e20-a6ca-c6d95775c301', 'abdul.hameed62@example.com', '5d97f3186742fc8db23d6d6b6f36805b5b7348e99d6fab02416be8cb449760f6', 'Abdul', 'Hameed', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -614,7 +614,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('0c380a5f-fd3d-4142-b338-cff23a1876e4', 'f498100f-80c4-467e-84ec-ebfe5470b442', '1832c5fd-810f-46d3-b52e-757a660637f4', 'cognito-70a79f68-4617-4d92-b2b8-b9c7f1ebc35d', 'janith.bandara63@example.com', 'f0be8bad935a16989de2638107fe954d42cc443aaeb25e22079207414ac31e2f', 'Janith', 'Bandara', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -622,7 +622,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('1fcce667-1eb6-4f83-8f7d-a79b77f990df', 'f498100f-80c4-467e-84ec-ebfe5470b442', '326e3f68-6049-48ec-b98b-29682de4eba5', 'cognito-f583153c-8253-4040-aa6d-35dc6ebdd712', 'vijay.raj64@example.com', '123002a63befafa686999fde915f904de19ef45967061288ac0c74aebe564aad', 'Vijay', 'Raj', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -630,7 +630,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('10d9b726-e7a7-4216-862d-398ef2f7bb78', 'f498100f-80c4-467e-84ec-ebfe5470b442', '8af7a921-fcae-4263-accd-9dc5cb7023cd', 'cognito-ff3fa073-1113-44e0-9af2-dc6179821de1', 'janani.raj65@example.com', '6339eff98320c3c74eb93b6672397c2a295f747016eb8bf369cc54c1bff1c215', 'Janani', 'Raj', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -638,7 +638,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('102683e9-a371-4687-a1c5-8635ab680ba9', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'e77a3e12-67aa-4df6-950d-e2c9159cafea', 'cognito-2799c488-6aba-4ee8-9d43-25a59a762993', 'gihan.rathnayake66@example.com', '9b383b614f2e09c896180a990604d88aee3a25b9394de91c4969a3faa5b5d0a5', 'Gihan', 'Rathnayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -646,7 +646,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('6573a3e3-7392-4f63-bb25-7f8eafd5a64b', 'f498100f-80c4-467e-84ec-ebfe5470b442', '6a2ac38e-5204-4038-b33c-2a20531bb199', 'cognito-8a84a712-b1eb-417c-b4dd-d5fa18658f35', 'supun.rathnayake67@example.com', '36c9d983047d6e8e05b13daa1b6e3e532fffac165ed406c2e92f14b27adb3bfd', 'Supun', 'Rathnayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -654,7 +654,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('77a4261a-024a-40ea-924b-32ed8a56c3d5', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'c2d22e87-99ff-4da0-921c-ec8bf0a17865', 'cognito-92254efc-6e62-4e60-8b33-0ccad712609c', 'shakira.mohamed68@example.com', '90b55e6a392d155a416851e23837f637776010abb98ac7d4b206d8dd088e4b64', 'Shakira', 'Mohamed', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -662,7 +662,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('a369bbae-4ded-4bba-9123-9c0d676b291c', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'f461b5cb-8344-4d06-839b-820d6ea3d272', 'cognito-fa75fa0c-2ab4-4b05-8680-6b6d4a4f8651', 'ahamed.fawzan69@example.com', '59176995ac61a5ce64b84f41022a1184ff50ab31a528137859c918bf8b1836bd', 'Ahamed', 'Fawzan', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -670,7 +670,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('baae2f3a-a3c5-421f-9c91-ada578cca17f', 'f498100f-80c4-467e-84ec-ebfe5470b442', '967af6e7-0654-4d44-b230-d02e450d54fa', 'cognito-182af937-1ce6-4cba-8cc3-bbe720848f30', 'sewmi.rajapaksha70@example.com', '7a382e6731c670929132715e031ef73b3dd975162480cde09e2723f597b47651', 'Sewmi', 'Rajapaksha', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -678,7 +678,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('e85d057b-c570-418f-8491-8b171929dd21', 'f498100f-80c4-467e-84ec-ebfe5470b442', '78316c1e-a8ed-4206-89e5-54dda46713df', 'cognito-a55df693-5f68-4032-82d9-c0c95a1836a7', 'sachini.rathnayake71@example.com', '39d84c5123091a6eeb7f455a6b0e84d325d4b54ad645709a399262b7eabc816e', 'Sachini', 'Rathnayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -686,7 +686,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('e3d6f24f-60ea-49b7-8810-a10ffb83e832', 'f498100f-80c4-467e-84ec-ebfe5470b442', '65064263-e0ac-4a53-8355-92c272849fc2', 'cognito-7ddeca6e-67c5-4ca7-9519-9465e974fb2d', 'akila.jayasinghe72@example.com', 'a8008db79a1c7d3c9a362e2ba58dac441e6d2856cf41e95d07c1e7ca7841d685', 'Akila', 'Jayasinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -694,7 +694,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('81ec57d3-0e21-460b-886f-cd73f2e5d454', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'a6d6a178-a8a5-4a88-867e-7b0e41b415c8', 'cognito-015b18b4-1353-4e1c-85f2-0f739991b23a', 'sandun.samarasinghe73@example.com', '5268af54732607b43bfb5870d2ef7430b666474a7c0ad14635afced23c6fa7fe', 'Sandun', 'Samarasinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -702,7 +702,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('088d031a-5d8f-4078-b244-0fca001e4ce9', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'c163a76c-7383-4bf5-9ad5-16495cdb04a7', 'cognito-aeff0c62-e919-4ed7-92a4-411242d4cc5f', 'kavindu.samarasinghe74@example.com', 'e6593bb095862aa0e0fd652ada78a152d795038c7b1f9c48f836ff2e29622c0c', 'Kavindu', 'Samarasinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -710,7 +710,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('dd5de91c-4f42-40e3-9ea2-a347ae7ae206', 'f498100f-80c4-467e-84ec-ebfe5470b442', '9ea2bff1-25be-4c1a-b316-9f7232df4dee', 'cognito-27dd643c-c76d-412e-a68e-74e8fba33980', 'yasmin.bandara75@example.com', '7d1d6cd90d2c9516b7b6d76c8978503516b2b04a6400ff80e11eeda87b598bf5', 'Yasmin', 'Bandara', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -718,7 +718,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('7fd0f548-0be6-404a-866f-fb9153c978d9', 'f498100f-80c4-467e-84ec-ebfe5470b442', '915855e2-cbc3-458a-8ea9-206c6f6a23d3', 'cognito-67a04187-3c0d-4dda-ba66-f3342101f447', 'chamari.wijesinghe76@example.com', '6c843c29d52f6ff71c3c9470c9568bbf34bef272b2de4b37db48466d0e854621', 'Chamari', 'Wijesinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -726,7 +726,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('36f5ee3f-0aff-4aed-b0d1-318007930367', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'cd8663d7-0e29-4b05-8a39-9fcf5e9f30d9', 'cognito-8902d5ef-2f5d-4c4e-9f1d-f3fdaa3c5b20', 'tharindu.wijesinghe77@example.com', '2879a3085fc95cdcf4f93d19053138faea28ba2df48726ece98dae37b7ba6003', 'Tharindu', 'Wijesinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -734,7 +734,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('aa1fdf7d-3b29-409a-a87a-8b1193a0135a', 'f498100f-80c4-467e-84ec-ebfe5470b442', '70050900-0c2c-4df8-9cf3-fee1660fb2e0', 'cognito-5646299a-f39b-4537-8da2-c81065bf74b3', 'nethmi.wijesinghe78@example.com', '49f74ce81e044ee4c2491a0932b5cb24784c44989a872d134856a33db754d313', 'Nethmi', 'Wijesinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -742,7 +742,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('1d10f14e-0c5e-4a05-a548-4fe11f113396', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'ea91e650-d449-46dd-a5ac-fa49254b0caa', 'cognito-9a26314e-cc1a-4b46-a6d4-9754e03537d4', 'pradeep.kumar79@example.com', 'aaafcbd295a1fb4305ec35c88ea3b73cb381afc3f2381e90152d86a12caf7042', 'Pradeep', 'Kumar', 'disabled');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -750,7 +750,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('a8b0d1d5-bd94-4e5c-afe2-5a026baef370', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'd7b8912c-034b-47a4-9647-61304900ea2a', 'cognito-ee394450-e3aa-4926-a17d-d153735c4f3e', 'nimal.bandara80@example.com', 'c9483b3d66524998e775493d81692ad9ba731eb7e7fbfae3cd029912011345d2', 'Nimal', 'Bandara', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -758,7 +758,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('6ad4e6a2-5e87-4d5c-a0d5-174217d056a3', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'b8d7fc94-66ff-4769-b710-876c0e48df91', 'cognito-5258b8f4-9106-4a0d-8504-8cffe2a838d3', 'sandun.wijesinghe81@example.com', 'ad6a9e4b2015372858b17ee30b30652a3e915648e3115946beb3d6bea8fb4d39', 'Sandun', 'Wijesinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -766,7 +766,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('6e7f6d99-2636-47c5-bc0a-17b30745f9b2', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'b873cf14-9ed9-4ac1-84e2-e40c3a4d9441', 'cognito-57360fdb-1b84-4e27-b67d-fcf865f1f790', 'tharushi.karunaratne82@example.com', 'a9adc4d70497ed9da649539d5e62f2a42f71e8f6f0464817972ef3dd9dcdb336', 'Tharushi', 'Karunaratne', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -774,7 +774,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('bbb3cdaf-e720-4353-8852-0baa0f3973eb', 'f498100f-80c4-467e-84ec-ebfe5470b442', '4463ab4f-c603-43f5-88d9-45fe81e7fc0b', 'cognito-d2733038-bc51-43ed-928c-59119a50cf18', 'hashini.kumara83@example.com', '79b155c49e401743dbd6170b63e15093564e997e12b5d658335d77448201c192', 'Hashini', 'Kumara', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -782,7 +782,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('3a18469c-bdff-4cf1-bd27-aafe923dc55f', 'f498100f-80c4-467e-84ec-ebfe5470b442', '0986f4d3-dcd8-4b66-9219-bb419a395874', 'cognito-cc05053d-e431-4678-8cbf-2b133bdc6034', 'vihangi.silva84@example.com', '2c165cccda50986dc568017164670e04e06b5aa33766fb23c9bcefba84715e09', 'Vihangi', 'Silva', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -790,7 +790,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('2efe1298-fd21-4c78-bc4b-b0633396345e', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'c311df0e-a68a-4e72-8db3-bc7a6aa59af5', 'cognito-1f4f8768-3662-43a2-8bce-51af69732b41', 'kasun.rajapaksha85@example.com', '029a57774f2ec42257a6fc85c35b59beb038352a89677df6730b567d1a7904bd', 'Kasun', 'Rajapaksha', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -798,7 +798,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('b08d0316-e6b1-402e-9801-b69bf9d650b4', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'c117591f-90b1-47b1-a3fc-6ff647c555ef', 'cognito-b48f1f22-478f-474e-9c5c-4509c4b2c5fa', 'harini.raj86@example.com', 'b86bcd70052ee5f5029e95c37a489ec7947b136be9be359fd8e85735885c3928', 'Harini', 'Raj', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -806,7 +806,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('78d426c3-61d1-4103-9a96-473cf9242c32', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'ee72c95f-dd2d-4cf0-99d2-d0dca48f776c', 'cognito-bdcf9d49-da5a-416a-a621-3098a250fae4', 'fathima.wijesinghe87@example.com', '976055134ff59bff6939614558f03cb21caeb1729dee315da251bf93afb1c85f', 'Fathima', 'Wijesinghe', 'disabled');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -814,7 +814,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('ea46f1fc-6b89-4da2-b747-1e8cb560607a', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'f681bafc-679f-43ca-a2d7-ebf29ca83c60', 'cognito-1014f508-1a27-492a-b501-baca37ba0381', 'fathima.nazeera88@example.com', '496c1de6c2814a8d2cc8dbefc816501f54e6e7a4817dd5a61fcbc6c3c12a350e', 'Fathima', 'Nazeera', 'locked');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -822,7 +822,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('e0cf03c6-e7c3-433b-a352-469a430c8b40', 'f498100f-80c4-467e-84ec-ebfe5470b442', '81d102c8-22ed-4fbd-b644-6dbb35d4214e', 'cognito-2bf42343-7a04-424a-8fc4-34273fb92d02', 'meena.raj89@example.com', '30e9e64d342d1e47d8ddf82bd585fab839d53000d6089e24560dc8c504c58c98', 'Meena', 'Raj', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -830,7 +830,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('9e65e95e-a185-4982-90bf-aa514a393878', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'e59ece74-fc2f-4405-80fa-4cd744d81488', 'cognito-050a6fa1-2606-455f-92c7-c31124d30758', 'malith.karunaratne90@example.com', 'f5961aa640f744f63186e11b6f0f581f15124cd875accfaa3d2e9f0fbae80163', 'Malith', 'Karunaratne', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -838,7 +838,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('22fa3887-a591-4353-b54c-f9a570fb6ca7', 'f498100f-80c4-467e-84ec-ebfe5470b442', '6e3813d9-42de-45ed-85a8-7be22845ead2', 'cognito-3816ca33-a1b7-4b9d-a1d6-37f1ccdb96a9', 'tharshan.raj91@example.com', 'bf066215f30a79beb241336791e45f2c31dee0aab8986b8055e730fffca47d8b', 'Tharshan', 'Raj', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -846,7 +846,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('b03932f5-7ea1-42a6-a784-9635b7fd2e2b', 'f498100f-80c4-467e-84ec-ebfe5470b442', '968e65cd-3570-4546-af00-3a0646c897a3', 'cognito-b15ac80a-822f-4bec-a7f5-1c3daee91781', 'anuki.fernando92@example.com', '38e042f7c1949806f913999a67ba5137576f39abc8912941560b5682188054f0', 'Anuki', 'Fernando', 'disabled');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -854,7 +854,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('7b88f6a0-1146-42e2-8ab8-2c62e34879c4', 'f498100f-80c4-467e-84ec-ebfe5470b442', '46862259-d8ed-4195-85ae-8113faa3c5f0', 'cognito-cb47bdd6-5ad4-403b-9169-89279e58e483', 'naveen.perera93@example.com', '2f142faf44cc4505469426d42875ef33eb9fd9158004ebf39e499e3ca56ac9fa', 'Naveen', 'Perera', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -862,7 +862,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('4b6bd434-697b-4f7c-b845-d0d067ffb8da', 'f498100f-80c4-467e-84ec-ebfe5470b442', '8710bd6a-e68d-43c0-b445-e31c8c376d3a', 'cognito-14ace87a-eb84-4241-bb97-b438da2ff54e', 'janith.karunaratne94@example.com', 'd1101b1fe9095e565ba3e8a1f39a704ed935e988ff251b498be37573397bab4b', 'Janith', 'Karunaratne', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -870,7 +870,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('910e00dd-9ca6-4dff-b4cf-bdc89cc527f6', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'cba15672-111e-4521-8c78-1a71e0901b13', 'cognito-33473b4d-c457-43c8-8c81-f98e67d11740', 'aravind.kumar95@example.com', '50f2504c9b4db14cedae158261711b777ea01226b0c4cd50953389e27195b2a7', 'Aravind', 'Kumar', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -878,7 +878,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('0377c014-e21e-49de-9459-68f443c190cf', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'f1fc157a-f24e-4220-88ae-5f6eb35d7981', 'cognito-905f798d-7a81-4fee-873b-73051147f32d', 'yasmin.fernando96@example.com', '018f210806b3b61cbee7c7483de5caacc419715653edc1ba5d3ac50f350d1f54', 'Yasmin', 'Fernando', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -886,7 +886,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('8887c666-f9e3-4d41-8b77-ac885502e3e0', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'af97c3c7-b9e8-4dbc-874c-0f458acce19f', 'cognito-2f8a0341-3be2-4b03-b446-4d64e43de2a6', 'piumi.perera97@example.com', 'e09dcbe733cd02981215b9c5347c72047a589cc8fbe1deba1b92ea46e52ff201', 'Piumi', 'Perera', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -894,7 +894,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('ba1f1b73-0e6e-4ee1-8d8e-ff88c5699544', 'f498100f-80c4-467e-84ec-ebfe5470b442', '8f24f079-8a09-42a3-aea8-0666b59ba709', 'cognito-be74a23f-0634-4d3e-aa04-d3139eb89364', 'hiruni.kumara98@example.com', 'de30e7d163d6606d081b2c7ec8b4bd3cf6ec564c672b6c0a6cbf2c6b6d3e84b4', 'Hiruni', 'Kumara', 'disabled');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -902,7 +902,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('f8ec418c-208b-46c1-8a4f-965e9aa99abc', 'f498100f-80c4-467e-84ec-ebfe5470b442', '1be81ea4-2030-43f4-9343-05678e9393cf', 'cognito-c22ae692-be57-43ec-834e-ae99248d461f', 'dilshan.dissanayake99@example.com', '1cb73fd4c3e3fe32aa50d9932fa5b92fb76425af2ba655eceadf47d4e6613f35', 'Dilshan', 'Dissanayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -910,7 +910,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('1f385b22-d7a2-4222-b05a-be63d9fa3a93', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'fce46753-11f1-45e8-8937-bd79a1a08851', 'cognito-26c3954f-9dda-46f8-8888-c5c14f05e579', 'pasindu.wijesinghe100@example.com', 'e1f65a5731ed43709c9464577e70cc12b75b869d2d5181f4921362a2248145b8', 'Pasindu', 'Wijesinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -918,7 +918,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('10469501-18ae-4df8-9abb-a720c2528160', 'f498100f-80c4-467e-84ec-ebfe5470b442', NULL, 'support-75c8b4e0-e1eb-4ad3-8f64-f4fd4656dc24', 'amal.fernando@lankadigitalbank.example', '96c7ade0683af5489745ab3f60502e2668cc86f086b35ec1f30ff60a56e89e7f', 'Amal', 'Fernando', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -926,7 +926,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'support_agent';
+  AND r.role_code = 'SUPPORT_AGENT';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('b7cde2db-ec72-4c79-be1c-f0c36593c10b', 'f498100f-80c4-467e-84ec-ebfe5470b442', NULL, 'support-e6cdc6d1-60f1-4428-a441-a87e487d84f6', 'nadeesha.perera@lankadigitalbank.example', '6aabc16430d60832d6ce9c6109151efda912b34b63bd90e11e6fe01dd76cdeb5', 'Nadeesha', 'Perera', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -934,7 +934,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'support_agent';
+  AND r.role_code = 'SUPPORT_AGENT';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('1365aa14-d93a-43e8-86c4-ed20ea3aa041', 'f498100f-80c4-467e-84ec-ebfe5470b442', NULL, 'support-89690a28-1d37-4bf5-a3e0-e774b969e07e', 'ruwan.jayasinghe@lankadigitalbank.example', 'a952918fdb2b714d3115b44309b1688e1be6bd007bdf55d76481dd33a0773628', 'Ruwan', 'Jayasinghe', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -942,7 +942,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'support_agent';
+  AND r.role_code = 'SUPPORT_AGENT';
 INSERT INTO app_user (id, tenant_id, customer_id, external_subject, email, password_hash, first_name, last_name, status) VALUES ('77995495-2084-4d15-9576-ee7f115897d8', 'f498100f-80c4-467e-84ec-ebfe5470b442', NULL, 'support-fdf7210b-a8f0-44cd-b5e4-bca36ed61126', 'shalini.rathnayake@lankadigitalbank.example', '336e83ca80271b0fa19e365b99c90b70b100c8831077087666764eb4038da02e', 'Shalini', 'Rathnayake', 'active');
 INSERT INTO user_role (user_id, role_id)
 SELECT
@@ -950,7 +950,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'support_agent';
+  AND r.role_code = 'SUPPORT_AGENT';
 -- 4. ACCOUNTS
 INSERT INTO account (id, tenant_id, customer_id, account_number, account_type, currency, current_balance, available_balance, status, opened_at, closed_at) VALUES ('9768996b-7b9f-404d-bd91-2ba4a9fc42ff', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'b1d50ca1-77e5-445c-a89d-89decf7a076d', '0010000000001', 'savings', 'LKR', 190487.87, 190487.87, 'dormant', '2026-04-13', NULL);
 INSERT INTO account (id, tenant_id, customer_id, account_number, account_type, currency, current_balance, available_balance, status, opened_at, closed_at) VALUES ('034516da-1bcb-4d8e-aed5-0b93ddaed820', 'f498100f-80c4-467e-84ec-ebfe5470b442', 'b1d50ca1-77e5-445c-a89d-89decf7a076d', '0010000000002', 'savings', 'LKR', 209760.49, 209760.49, 'blocked', '2026-03-24', NULL);

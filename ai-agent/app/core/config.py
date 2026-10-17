@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     app_port: int = 8004
 
     tool_gateway_base_url: str = "http://127.0.0.1:8003"
+    rag_base_url: str = "http://127.0.0.1:8005"
     request_timeout_seconds: float = 15.0
     max_agent_steps: int = 8
     max_tool_calls: int = 3

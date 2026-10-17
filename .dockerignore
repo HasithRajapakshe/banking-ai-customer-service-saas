@@ -1,6 +1,9 @@
-node_modules
-.venv
-__pycache__
-*.pyc
+.git
+**/node_modules
+**/.next
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
 .env
-.pytest_cache
+**/.env

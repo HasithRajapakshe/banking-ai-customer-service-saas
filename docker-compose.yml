@@ -1,11 +1,17 @@
+# Local development stack. Every variable has a development default (matching
+# .env.example), so `docker compose up --build` works without a .env file.
+# Values in a .env file override these defaults.
+
+x-database-url: &database-url ${DATABASE_URL:-postgresql+asyncpg://banking_app:change_me_in_production@postgres:5432/banking_ai}
+
 services:
   postgres:
     image: pgvector/pgvector:pg16
     container_name: banking-postgres
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-banking_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-banking_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_production}
     ports:
       - "5432:5432"
     volumes:
@@ -14,7 +20,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"
+          "pg_isready -U ${POSTGRES_USER:-banking_app} -d ${POSTGRES_DB:-banking_ai}"
         ]
       interval: 10s
       timeout: 5s
@@ -33,19 +39,33 @@ services:
       timeout: 5s
       retries: 5
 
+  # One-shot job: apply Alembic migrations, then load seeds (idempotent).
+  migrate:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    container_name: migrate
+    environment:
+      DATABASE_URL: *database-url
+      TENANT_ID: ${TENANT_ID:-f498100f-80c4-467e-84ec-ebfe5470b442}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
   synthetic-bank:
     build: ./synthetic-bank
     container_name: synthetic-bank
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: ${DATABASE_URL}
-      INTERNAL_API_KEY: ${SYNTHETIC_BANK_API_KEY}
-      BANK_CODE: ${BANK_CODE}
-      TENANT_ID: ${TENANT_ID}
+      DATABASE_URL: *database-url
+      INTERNAL_API_KEY: ${SYNTHETIC_BANK_API_KEY:-synthetic-bank-internal-key-dev}
+      BANK_CODE: ${BANK_CODE:-SLBANK01}
+      TENANT_ID: ${TENANT_ID:-f498100f-80c4-467e-84ec-ebfe5470b442}
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
@@ -65,8 +85,8 @@ services:
       - "8002:8002"
     environment:
       SYNTHETIC_BANK_BASE_URL: http://synthetic-bank:8000
-      SYNTHETIC_BANK_API_KEY: ${SYNTHETIC_BANK_API_KEY}
-      INTERNAL_API_KEY: ${BANKING_ADAPTER_API_KEY}
+      SYNTHETIC_BANK_API_KEY: ${SYNTHETIC_BANK_API_KEY:-synthetic-bank-internal-key-dev}
+      INTERNAL_API_KEY: ${BANKING_ADAPTER_API_KEY:-banking-adapter-internal-key-dev}
     depends_on:
       synthetic-bank:
         condition: service_healthy
@@ -89,9 +109,12 @@ services:
       - "8003:8003"
     environment:
       BANKING_ADAPTER_BASE_URL: http://banking-adapter:8002
-      BANKING_ADAPTER_API_KEY: ${BANKING_ADAPTER_API_KEY}
+      BANKING_ADAPTER_API_KEY: ${BANKING_ADAPTER_API_KEY:-banking-adapter-internal-key-dev}
+      REDIS_URL: redis://redis:6379/2
     depends_on:
       banking-adapter:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test:
@@ -105,6 +128,32 @@ services:
       timeout: 5s
       retries: 10
 
+  rag:
+    build: ./rag
+    container_name: rag-service
+    ports:
+      - "8005:8005"
+    environment:
+      APP_ENV: development
+      DATABASE_URL: *database-url
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-mock}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   ai-agent:
     build: ./ai-agent
     container_name: ai-agent
@@ -113,8 +162,11 @@ services:
     environment:
       APP_ENV: development
       TOOL_GATEWAY_BASE_URL: http://tool-gateway:8003
+      RAG_BASE_URL: http://rag:8005
     depends_on:
       tool-gateway:
+        condition: service_healthy
+      rag:
         condition: service_healthy
     healthcheck:
       test:
@@ -135,16 +187,17 @@ services:
       - "8001:8001"
     environment:
       APP_ENV: development
-      DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
-      JWT_SECRET: ${JWT_SECRET}
+      DATABASE_URL: *database-url
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${JWT_SECRET:-change-this-to-a-long-random-secret-in-production}
       TOOL_GATEWAY_BASE_URL: http://tool-gateway:8003
       AI_AGENT_BASE_URL: http://ai-agent:8004
-      TENANT_ID: ${TENANT_ID}
-      SYNTHETIC_BANK_API_KEY: ${SYNTHETIC_BANK_API_KEY}
+      RAG_BASE_URL: http://rag:8005
+      TENANT_ID: ${TENANT_ID:-f498100f-80c4-467e-84ec-ebfe5470b442}
+      SYNTHETIC_BANK_API_KEY: ${SYNTHETIC_BANK_API_KEY:-synthetic-bank-internal-key-dev}
     depends_on:
-      postgres:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
       ai-agent:
@@ -156,32 +209,6 @@ services:
           "python",
           "-c",
           "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-
-  rag:
-    build: ./rag
-    container_name: rag-service
-    ports:
-      - "8005:8005"
-    environment:
-      APP_ENV: development
-      DATABASE_URL: ${DATABASE_URL}
-      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER}
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "python",
-          "-c",
-          "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"
         ]
       interval: 10s
       timeout: 5s

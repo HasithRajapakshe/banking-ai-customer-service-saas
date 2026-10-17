@@ -8,17 +8,11 @@ from app.core.config import settings
 class RagClient:
     def __init__(self):
         self._client: httpx.AsyncClient | None = None
-        # Use service discovery if present, otherwise default to local
-        self.base_url = "http://rag:8005" if "rag" in settings.tool_gateway_base_url else "http://localhost:8005"
-        # Wait, settings might not have rag_url. Let's just hardcode based on docker compose for now.
-        # RAG is on port 8005.
-        
+
     async def start(self):
         if self._client is None:
-            # We can use an env var in config, but for simplicity we'll assume http://rag:8005
-            rag_url = getattr(settings, "rag_base_url", "http://rag:8005")
             self._client = httpx.AsyncClient(
-                base_url=rag_url,
+                base_url=settings.rag_base_url,
                 timeout=settings.request_timeout_seconds,
             )
 

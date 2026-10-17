@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.routes import auth, chat, accounts
 from app.core.config import settings
+from app.core.rate_limit import RateLimitExceeded, check_rate_limit
 
 # Configure logging
 logging.basicConfig(
@@ -36,12 +37,29 @@ app.add_middleware(
 # Correlation ID middleware
 @app.middleware("http")
 async def correlation_id_middleware(request: Request, call_next: Callable) -> Response:
-    from app.core.rate_limit import check_rate_limit
     correlation_id = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())
     request.state.correlation_id = correlation_id
-    
+
     try:
         await check_rate_limit(request)
+    except RateLimitExceeded as exc:
+        return JSONResponse(
+            status_code=429,
+            content={
+                "success": False,
+                "error": {
+                    "code": "RATE_LIMITED",
+                    "message": "Too Many Requests. Please try again later.",
+                },
+                "correlation_id": correlation_id,
+            },
+            headers={
+                "X-Correlation-ID": correlation_id,
+                "Retry-After": str(exc.retry_after),
+            },
+        )
+
+    try:
         response = await call_next(request)
         response.headers["X-Correlation-ID"] = correlation_id
         return response

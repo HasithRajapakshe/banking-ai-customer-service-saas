@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     embedding_model: str = "text-embedding-3-small"
     openai_api_key: str | None = None
 
+    # Default minimum cosine similarity for /search when the caller does not
+    # pass one. Mock (feature-hashing) embeddings score shared-vocabulary
+    # matches lower than neural embeddings do, so keep this modest.
+    search_similarity_threshold: float = 0.15
+
     # Chunking
     chunk_size: int = 1000
     chunk_overlap: int = 200
