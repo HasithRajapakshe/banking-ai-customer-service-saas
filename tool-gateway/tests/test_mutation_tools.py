@@ -123,6 +123,37 @@ async def test_card_block_unconfirmed_no_downstream():
 
 @pytest.mark.asyncio(loop_scope="function")
 @respx.mock
+async def test_high_risk_without_user_is_refused_and_not_executed():
+    """No user_id: no challenge can be bound, so the tool is refused outright."""
+    route = respx.post(
+        f"{BASE}/api/v1/customers/{TEST_CUSTOMER_ID}"
+        f"/cards/{TEST_CARD_ID}/block"
+    ).mock(return_value=Response(200, json={}))
+
+    payload = make_execute_payload(
+        "card.block",
+        arguments={"card_id": str(TEST_CARD_ID)},
+        confirmed=True,
+        challenge_code="TEST_CHALLENGE_CODE",
+        user_id=None,
+    )
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+    ) as client:
+        resp = await client.post("/api/v1/tools/execute", json=payload)
+
+    data = resp.json()
+    assert data["success"] is False
+    assert data["error"]["code"] == "CONFIRMATION_REQUIRES_USER"
+    assert data["requires_confirmation"] is False
+    assert data["executed"] is False
+    assert route.call_count == 0
+
+
+@pytest.mark.asyncio(loop_scope="function")
+@respx.mock
 async def test_payment_create_unconfirmed_no_downstream():
     """Unconfirmed payment.create must NOT send request."""
     route = respx.post(

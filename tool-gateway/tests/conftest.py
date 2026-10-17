@@ -12,6 +12,7 @@ from app.tools.registry import register_default_tools, tool_registry
 TEST_TENANT_ID = uuid.UUID("f498100f-80c4-467e-84ec-ebfe5470b442")
 TEST_CUSTOMER_ID = uuid.UUID("5f695079-da87-45a2-8a9c-b778600b2c32")
 TEST_ACCOUNT_ID = uuid.UUID("4ba945f9-df1a-473a-bca7-3e397029cb29")
+TEST_USER_ID = uuid.UUID("0c1e2d3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f")
 TEST_CARD_ID = uuid.uuid4()
 TEST_PAYMENT_ID = uuid.uuid4()
 TEST_BENEFICIARY_ID = uuid.uuid4()
@@ -26,11 +27,13 @@ def make_execute_payload(
     challenge_code: str | None = None,
     tenant_id: uuid.UUID | None = None,
     customer_id: uuid.UUID | None = None,
+    user_id: uuid.UUID | None = TEST_USER_ID,
 ) -> dict:
     return {
         "tool_name": tool_name,
         "tenant_id": str(tenant_id or TEST_TENANT_ID),
         "customer_id": str(customer_id or TEST_CUSTOMER_ID),
+        "user_id": str(user_id) if user_id else None,
         "arguments": arguments or {},
         "confirmed": confirmed,
         "challenge_code": challenge_code,

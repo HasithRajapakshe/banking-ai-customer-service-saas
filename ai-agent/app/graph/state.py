@@ -9,6 +9,7 @@ class AgentState(TypedDict, total=False):
     conversation_id: str
     channel: str
     confirmed: bool
+    challenge_code: str | None
     correlation_id: str
     tool_name_override: str | None
     tool_arguments_override: dict[str, Any]
@@ -25,3 +26,5 @@ class AgentState(TypedDict, total=False):
     status: str
     response_message: str
     requires_confirmation: bool
+    confirmation_challenge: str | None
+    action_summary: str | None

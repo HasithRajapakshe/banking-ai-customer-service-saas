@@ -5,6 +5,7 @@ from app.clients.tool_gateway_client import tool_gateway_client
 from app.clients.rag_client import rag_client
 from app.core.config import settings
 from app.graph.state import AgentState
+from app.services.action_summary import action_summary_service
 from app.services.intent_router import intent_router
 from app.services.response_service import response_service
 from app.services.security_service import security_service
@@ -48,27 +49,45 @@ async def execute_tool(state: AgentState):
             "requires_confirmation": False,
         }
 
+    context = {
+        "tenant_id": state["tenant_id"],
+        "customer_id": state["customer_id"],
+        "user_id": state.get("user_id"),
+        "conversation_id": state["conversation_id"],
+        "channel": state["channel"],
+        "correlation_id": state["correlation_id"],
+    }
+    arguments = state.get("tool_arguments", {})
     result = await tool_gateway_client.execute(
         tool_name=state["tool_name"],
-        tenant_id=state["tenant_id"],
-        customer_id=state["customer_id"],
-        user_id=state.get("user_id"),
-        conversation_id=state["conversation_id"],
-        channel=state["channel"],
-        arguments=state.get("tool_arguments", {}),
+        arguments=arguments,
         confirmed=state.get("confirmed", False),
-        correlation_id=state["correlation_id"],
+        challenge_code=state.get("challenge_code"),
+        **context,
     )
     message, status, requires_confirmation = response_service.from_tool_result(
         state["tool_name"], result
     )
-    return {
+
+    update = {
         "tool_calls": calls + 1,
         "tool_result": result,
         "status": status,
         "response_message": message,
         "requires_confirmation": requires_confirmation,
+        "confirmation_challenge": None,
+        "action_summary": None,
     }
+    if requires_confirmation:
+        summary = await action_summary_service.describe(
+            tool_name=state["tool_name"], arguments=arguments, **context
+        )
+        update.update(
+            confirmation_challenge=result.get("confirmation_challenge"),
+            action_summary=summary,
+            response_message=f"Please confirm: {summary}. {message}",
+        )
+    return update
 
 
 async def retrieve_knowledge(state: AgentState):

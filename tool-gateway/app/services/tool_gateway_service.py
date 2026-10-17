@@ -174,6 +174,28 @@ class ToolGatewayService:
         # 4. Deterministic confirmation gate
         # ---------------------------------------------------------
         if tool.requires_confirmation:
+            # Challenges are bound to a user; without one nobody can confirm.
+            if context.user_id is None:
+                audit_service.log_execution(
+                    tool_name=tool.name,
+                    context=context,
+                    risk_level=tool.risk_level.value,
+                    executed=False,
+                    success=False,
+                    error_code="CONFIRMATION_REQUIRES_USER",
+                )
+                return ToolResult(
+                    success=False,
+                    tool_name=tool.name,
+                    risk_level=tool.risk_level,
+                    error=ToolError(
+                        code="CONFIRMATION_REQUIRES_USER",
+                        message="A user identity is required to confirm high-risk actions.",
+                    ),
+                    correlation_id=context.correlation_id,
+                    executed=False,
+                )
+
             if not confirmed or not challenge_code:
                 # Issue new challenge
                 try:
