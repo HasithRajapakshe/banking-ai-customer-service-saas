@@ -63,6 +63,13 @@ class AuditService:
                 tool_name,
                 extra=log_data,
             )
+        elif error_code == "CONFIRMATION_REQUIRED":
+            # Held for user confirmation: an expected step, not a failure.
+            logger.info(
+                "Tool awaiting confirmation: %s",
+                tool_name,
+                extra=log_data,
+            )
         else:
             logger.warning(
                 "Tool failed: %s",
