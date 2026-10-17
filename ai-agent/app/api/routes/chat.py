@@ -18,10 +18,20 @@ async def chat(payload: ChatRequest, request: Request):
             "conversation_id": str(payload.conversation_id),
             "channel": payload.channel,
             "confirmed": payload.confirmed,
+            "challenge_code": payload.challenge_code,
             "correlation_id": request.state.correlation_id,
             "tool_name_override": payload.tool_name,
             "tool_arguments_override": payload.tool_arguments,
             "tool_calls": 0,
+            # The checkpointer keeps state per conversation; reset per-turn
+            # outputs so a previous turn's result or challenge never leaks
+            # into this response.
+            "tool_name": None,
+            "tool_arguments": {},
+            "tool_result": None,
+            "requires_confirmation": False,
+            "confirmation_challenge": None,
+            "action_summary": None,
         },
         config={"configurable": {"thread_id": str(payload.conversation_id)}}
     )
@@ -36,5 +46,8 @@ async def chat(payload: ChatRequest, request: Request):
         tool_name=state.get("tool_name"),
         tool_executed=bool(tool_result.get("executed", False)),
         requires_confirmation=state.get("requires_confirmation", False),
+        confirmation_challenge=state.get("confirmation_challenge"),
+        action_summary=state.get("action_summary"),
+        tool_arguments=state.get("tool_arguments") if state.get("requires_confirmation") else None,
         data=tool_result.get("data"),
     )

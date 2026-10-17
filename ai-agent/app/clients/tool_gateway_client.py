@@ -33,6 +33,7 @@ class ToolGatewayClient:
         arguments: dict[str, Any],
         confirmed: bool,
         correlation_id: str,
+        challenge_code: str | None = None,
     ) -> dict[str, Any]:
         if self._client is None:
             await self.start()
@@ -50,6 +51,7 @@ class ToolGatewayClient:
                 "channel": channel,
                 "arguments": arguments,
                 "confirmed": confirmed,
+                "challenge_code": challenge_code,
             },
         )
         response.raise_for_status()

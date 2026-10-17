@@ -1,27 +1,33 @@
 import uuid
 import datetime
-from typing import Any
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 
 from app.api.dependencies import get_current_active_user
-from app.core.config import settings
 from app.core.database import get_db
 from app.models import AppUser, Conversation, Message
+from app.services.agent_client import ai_agent_client
+from app.services.pending_action_service import PendingAction, pending_action_service
 
 router = APIRouter(prefix="/api/v1/chat", tags=["Chat"])
 
 class ChatRequest(BaseModel):
-    message: str
+    """Public chat request.
+
+    Clients cannot choose a tool, its arguments, or mark an action as
+    confirmed: confirming means returning the challenge_code issued for the
+    action stored server-side for this conversation.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    message: str = Field(min_length=1, max_length=8000)
     conversation_id: uuid.UUID
-    channel: str = "web"
-    tool_name: str | None = None
-    tool_arguments: dict[str, Any] = {}
-    confirmed: bool = False
+    channel: str = Field(default="web", max_length=30)
+    challenge_code: str | None = Field(default=None, min_length=1, max_length=64)
 
 class MessageResponse(BaseModel):
     id: uuid.UUID
@@ -101,7 +107,23 @@ async def chat_with_agent(
     if conversation:
         if conversation.tenant_id != current_user.tenant_id or conversation.customer_id != current_user.customer_id:
             raise HTTPException(status_code=403, detail="Not authorized to access this conversation")
-            
+
+    # Confirmation: the action comes from server-side storage, never from the
+    # request. It must match this conversation, this challenge code and this user.
+    pending: PendingAction | None = None
+    if payload.challenge_code:
+        pending = await pending_action_service.consume(payload.conversation_id, payload.challenge_code)
+        if (
+            pending is None
+            or pending.user_id != current_user.id
+            or pending.customer_id != current_user.customer_id
+            or pending.tenant_id != current_user.tenant_id
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="No pending action matches this confirmation. It may have expired or already been used.",
+            )
+
     if not conversation:
         conversation = Conversation(
             id=payload.conversation_id,
@@ -137,34 +159,16 @@ async def chat_with_agent(
         "user_id": str(current_user.id),
         "conversation_id": str(payload.conversation_id),
         "channel": payload.channel,
-        "tool_name": payload.tool_name,
-        "tool_arguments": payload.tool_arguments,
-        "confirmed": payload.confirmed,
     }
+    if pending is not None:
+        agent_payload.update(
+            tool_name=pending.tool_name,
+            tool_arguments=pending.tool_arguments,
+            confirmed=True,
+            challenge_code=pending.challenge_code,
+        )
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.post(
-                f"{settings.ai_agent_base_url}/api/v1/agent/chat",
-                json=agent_payload,
-                headers={
-                    "X-Correlation-ID": correlation_id,
-                    "Content-Type": "application/json"
-                },
-                timeout=60.0
-            )
-            response.raise_for_status()
-            data = response.json()
-        except httpx.HTTPStatusError as exc:
-            raise HTTPException(
-                status_code=exc.response.status_code,
-                detail=f"Agent error: {exc.response.text}"
-            )
-        except httpx.RequestError as exc:
-            raise HTTPException(
-                status_code=503,
-                detail=f"Failed to communicate with AI Agent: {str(exc)}"
-            )
+    data = await ai_agent_client.chat(agent_payload, correlation_id)
 
     # 4. Save agent message
     agent_now = datetime.datetime.now(datetime.timezone.utc)
@@ -181,5 +185,22 @@ async def chat_with_agent(
     db.add(agent_msg)
     conversation.updated_at = agent_now
     await db.commit()
-    
+
+    # 5. Remember a newly issued challenge server-side for this conversation.
+    if data.get("requires_confirmation") and data.get("confirmation_challenge") and data.get("tool_name"):
+        await pending_action_service.save(
+            payload.conversation_id,
+            PendingAction(
+                challenge_code=data["confirmation_challenge"],
+                tool_name=data["tool_name"],
+                tool_arguments=data.get("tool_arguments") or {},
+                action_summary=data.get("action_summary"),
+                tenant_id=current_user.tenant_id,
+                customer_id=current_user.customer_id,
+                user_id=current_user.id,
+            ),
+        )
+
+    # The client needs the challenge code and summary, not the raw arguments.
+    data.pop("tool_arguments", None)
     return data

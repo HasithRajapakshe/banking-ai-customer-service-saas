@@ -50,7 +50,12 @@ class ResponseService:
                     lines.append(f"{desc} ({curr} {amt})")
                 return (f"Here are your recent transactions: {', '.join(lines)}.", "completed", False)
 
-            return (f"The banking request completed successfully.", "completed", False)
+            if tool_name == "card.block" and isinstance(data, dict):
+                last4 = data.get("card_last4")
+                card = f"card ending {last4}" if last4 else "card"
+                return (f"Your {card} has been blocked.", "completed", False)
+
+            return ("The banking request completed successfully.", "completed", False)
 
         error = result.get("error") or {}
         code = error.get("code", "TOOL_EXECUTION_FAILED")

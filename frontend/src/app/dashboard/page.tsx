@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, useRef } from "react";
-import { Send, CreditCard, Wallet, TrendingUp, Sparkles, User, Bot, Loader2 } from "lucide-react";
+import { Send, CreditCard, Wallet, TrendingUp, Sparkles, User, Bot, Loader2, ShieldAlert } from "lucide-react";
 import { motion } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
 import type { Account } from "@/lib/types";
@@ -11,6 +11,21 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   toolResult?: unknown;
+}
+
+// POST /api/v1/chat response (errors carry `detail` instead).
+interface ChatResponse {
+  message?: string;
+  data?: unknown;
+  requires_confirmation?: boolean;
+  confirmation_challenge?: string | null;
+  action_summary?: string | null;
+  detail?: unknown;
+}
+
+interface PendingConfirmation {
+  challengeCode: string;
+  summary: string;
 }
 
 async function fetchAccounts(): Promise<Account[] | null> {
@@ -30,6 +45,7 @@ export default function Dashboard() {
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [pending, setPending] = useState<PendingConfirmation | null>(null);
   
   const conversationId = useRef(uuidv4());
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -51,13 +67,7 @@ export default function Dashboard() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    const userMessage = input.trim();
-    setInput("");
-    
+  const sendChat = async (userMessage: string, challengeCode?: string) => {
     setMessages(prev => [...prev, { id: uuidv4(), role: "user", content: userMessage }]);
     setIsTyping(true);
 
@@ -65,36 +75,78 @@ export default function Dashboard() {
       const token = localStorage.getItem("token");
       const res = await fetch("http://localhost:8001/api/v1/chat", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
           message: userMessage,
           conversation_id: conversationId.current,
+          ...(challengeCode ? { challenge_code: challengeCode } : {}),
         }),
       });
-      
-      const data = await res.json();
-      
-      setMessages(prev => [...prev, { 
-        id: uuidv4(), 
-        role: "assistant", 
+
+      const data: ChatResponse = await res.json();
+
+      if (!res.ok) {
+        setMessages(prev => [...prev, {
+          id: uuidv4(),
+          role: "assistant",
+          content: typeof data.detail === "string" ? data.detail : "The request could not be completed.",
+        }]);
+        return;
+      }
+
+      setMessages(prev => [...prev, {
+        id: uuidv4(),
+        role: "assistant",
         content: data.message || "Done.",
-        toolResult: data.data 
+        toolResult: data.data
       }]);
+
+      if (data.requires_confirmation && data.confirmation_challenge) {
+        setPending({
+          challengeCode: data.confirmation_challenge,
+          summary: data.action_summary || "Confirm this action",
+        });
+      }
 
       // Refresh accounts in case the agent did something
       refreshAccounts();
     } catch {
-      setMessages(prev => [...prev, { 
-        id: uuidv4(), 
-        role: "assistant", 
-        content: "I'm having trouble connecting to the banking core right now." 
+      setMessages(prev => [...prev, {
+        id: uuidv4(),
+        role: "assistant",
+        content: "I'm having trouble connecting to the banking core right now."
       }]);
     } finally {
       setIsTyping(false);
     }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    const userMessage = input.trim();
+    setInput("");
+    await sendChat(userMessage);
+  };
+
+  const handleConfirm = async () => {
+    if (!pending) return;
+    const { challengeCode } = pending;
+    setPending(null);
+    await sendChat("Confirm", challengeCode);
+  };
+
+  const handleCancel = () => {
+    setPending(null);
+    setMessages(prev => [...prev, {
+      id: uuidv4(),
+      role: "assistant",
+      content: "Cancelled. No action was taken.",
+    }]);
   };
 
   return (
@@ -228,6 +280,36 @@ export default function Dashboard() {
                 <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             </div>
+          )}
+          {pending && !isTyping && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              role="alertdialog"
+              aria-labelledby="confirm-title"
+              className="max-w-[85%] ml-12 p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 space-y-3"
+            >
+              <div className="flex items-center gap-2 text-amber-300 text-sm font-semibold" id="confirm-title">
+                <ShieldAlert className="w-4 h-4" /> Confirmation required
+              </div>
+              <p className="text-white text-sm">{pending.summary}</p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  className="px-4 py-2 rounded-lg bg-amber-500 text-black text-sm font-semibold hover:bg-amber-400 transition-colors"
+                >
+                  Confirm
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancel}
+                  className="px-4 py-2 rounded-lg border border-surface-border text-gray-300 text-sm hover:bg-white/5 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
           )}
           <div ref={messagesEndRef} />
         </div>

@@ -31,8 +31,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: banking-redis
-    ports:
-      - "6379:6379"
+    # Not published to the host: services reach it as redis:6379 on the
+    # Compose network, and an unauthenticated Redis should not be exposed.
     volumes:
       - redis_data:/data
     healthcheck:
@@ -130,6 +130,22 @@ services:
       timeout: 5s
       retries: 10
 
+  # One-shot job: embed seeded knowledge chunks that have no embedding yet
+  # (idempotent; only rows WHERE embedding IS NULL are touched).
+  rag-backfill:
+    build: ./rag
+    container_name: rag-backfill
+    command: ["python", "-m", "app.backfill_embeddings"]
+    environment:
+      DATABASE_URL: *database-url
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-mock}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
   rag:
     build: ./rag
     container_name: rag-service
@@ -142,7 +158,7 @@ services:
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
-      migrate:
+      rag-backfill:
         condition: service_completed_successfully
     healthcheck:
       test:
