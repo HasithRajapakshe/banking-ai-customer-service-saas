@@ -6,8 +6,8 @@ import { ArrowRight, Lock, Shield, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function LandingPage() {
-  const [username, setUsername] = useState("alice");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
@@ -22,7 +22,8 @@ export default function LandingPage() {
       const res = await fetch("http://localhost:8001/api/v1/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        // The API's LoginRequest field is "username"; its value is the email.
+        body: JSON.stringify({ username: email, password }),
       });
 
       if (!res.ok) {
@@ -31,7 +32,12 @@ export default function LandingPage() {
 
       const data = await res.json();
       localStorage.setItem("token", data.access_token);
-      router.push("/dashboard");
+
+      const rolesRes = await fetch("http://localhost:8001/api/v1/auth/me/roles", {
+        headers: { Authorization: `Bearer ${data.access_token}` },
+      });
+      const roles: string[] = rolesRes.ok ? await rolesRes.json() : [];
+      router.push(roles.includes("ADMIN") ? "/admin" : "/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to login");
     } finally {
@@ -103,13 +109,14 @@ export default function LandingPage() {
 
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-300">Username</label>
+                  <label className="text-sm font-medium text-gray-300">Email</label>
                   <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    type="email"
+                    autoComplete="username"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-3 rounded-xl bg-black/50 border border-surface-border focus:border-primary-500 focus:ring-1 focus:ring-primary-500 outline-none transition-all text-white placeholder-gray-600"
-                    placeholder="Enter your username"
+                    placeholder="you@example.com"
                     required
                   />
                 </div>
@@ -146,9 +153,8 @@ export default function LandingPage() {
               </form>
 
               <div className="mt-6 text-center text-xs text-gray-500">
-                <p>Default Accounts:</p>
-                <p className="mt-1">Alice: <code>alice / password123</code></p>
-                <p>Bob: <code>bob / password123</code></p>
+                <p>Demo accounts (password <code>password123</code>):</p>
+                <p className="mt-1"><code>alice@example.com</code> · <code>bob@example.com</code> · <code>admin@example.com</code></p>
               </div>
             </div>
           </div>

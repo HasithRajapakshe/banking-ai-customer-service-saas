@@ -56,6 +56,42 @@ jobs:
       - name: Run tests
         run: python -m pytest
 
+  # Alembic is the schema source of truth: migrate a real pgvector database
+  # (down to base and back up) and check every service's ORM against it.
+  schema-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: schema_test
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d schema_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/schema_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: database/requirements-test.txt
+
+      - name: Install dependencies
+        run: pip install -r database/requirements-test.txt
+
+      - name: Run schema alignment tests
+        run: python -m pytest database/tests
+
   frontend-tests:
     runs-on: ubuntu-latest
     defaults:

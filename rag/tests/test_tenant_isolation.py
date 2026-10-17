@@ -93,6 +93,23 @@ async def test_search_filters_by_tenant(client, db_session):
     resp = await client.get(f"/api/v1/rag/search?query=card+fees&tenant_id={tenant_a}")
 
     assert resp.status_code == 200
-    assert resp.json() == {"success": True, "query": "card fees", "results": []}
+    body = resp.json()
+    assert body["success"] is True
+    assert body["results"] == []
     params = bound_params(executed_statement(db_session))
     assert tenant_a in params.values()
+
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_search_applies_similarity_threshold(client, db_session):
+    db_session.execute.return_value.all.return_value = []
+
+    resp = await client.get(
+        f"/api/v1/rag/search?query=card+fees&tenant_id={uuid.uuid4()}&similarity_threshold=0.4"
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["similarity_threshold"] == 0.4
+    # The WHERE clause bounds cosine distance by 1 - threshold.
+    params = bound_params(executed_statement(db_session))
+    assert any(isinstance(v, float) and abs(v - 0.6) < 1e-9 for v in params.values())

@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     ai_agent_base_url: str = "http://ai-agent:8004"
     tool_gateway_base_url: str = "http://tool-gateway:8003"
     synthetic_bank_base_url: str = "http://synthetic-bank:8000"
+    rag_base_url: str = "http://rag:8005"
 
     # Internal API keys
     tool_gateway_api_key: str = "tool-gateway-internal-key-dev"

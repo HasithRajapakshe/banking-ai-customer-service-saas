@@ -827,7 +827,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'customer';
+  AND r.role_code = 'CUSTOMER';
 """.strip()
         )
 
@@ -892,7 +892,7 @@ SELECT
     r.id
 FROM role r
 WHERE r.tenant_id IS NULL
-  AND r.role_code = 'support_agent';
+  AND r.role_code = 'SUPPORT_AGENT';
 """.strip()
         )
 

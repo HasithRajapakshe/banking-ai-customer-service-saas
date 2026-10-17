@@ -73,7 +73,7 @@ def require_permission(required_permission: str):
     ) -> AppUser:
         # Check if the user has the required permission through their roles
         stmt = (
-            select(Permission.code)
+            select(Permission.permission_code)
             .join(RolePermission, RolePermission.permission_id == Permission.id)
             .join(UserRole, UserRole.role_id == RolePermission.role_id)
             .where(UserRole.user_id == current_user.id)

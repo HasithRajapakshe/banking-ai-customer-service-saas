@@ -1,10 +1,10 @@
 import uuid
-from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.models import Document, DocumentChunk
 from app.services.rag_service import rag_service
@@ -17,13 +17,21 @@ async def search_documents(
     query: str,
     tenant_id: uuid.UUID,
     limit: int = Query(default=5, ge=1, le=20),
-    similarity_threshold: float = Query(default=0.7, ge=0.0, le=1.0),
+    similarity_threshold: float | None = Query(default=None, ge=0.0, le=1.0),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Search for document chunks relevant to the query using vector similarity.
+    Search published document chunks for the tenant by cosine similarity.
+
+    Only chunks with similarity >= similarity_threshold are returned
+    (default: settings.search_similarity_threshold), best match first.
     """
-    # 1. Get embedding for the query
+    threshold = (
+        similarity_threshold
+        if similarity_threshold is not None
+        else settings.search_similarity_threshold
+    )
+
     try:
         query_embedding = await rag_service.get_embedding(query)
     except Exception as exc:
@@ -32,39 +40,42 @@ async def search_documents(
             detail=f"Failed to generate embedding for query: {str(exc)}",
         )
 
-    # 2. Vector search using pgvector
-    # L2 distance or Cosine distance. pgvector uses <=> for cosine distance.
+    # pgvector's <=> is cosine distance; similarity = 1 - distance.
+    distance = DocumentChunk.embedding.cosine_distance(query_embedding)
     stmt = (
-        select(DocumentChunk, Document)
+        select(DocumentChunk, Document, distance.label("distance"))
         .join(Document, Document.id == DocumentChunk.document_id)
         .where(
             DocumentChunk.tenant_id == tenant_id,
-            Document.status == "active"
+            Document.tenant_id == tenant_id,
+            Document.status == "published",
+            DocumentChunk.embedding.is_not(None),
+            distance <= 1.0 - threshold,
         )
-        .order_by(DocumentChunk.embedding.cosine_distance(query_embedding))
+        .order_by(distance)
         .limit(limit)
     )
 
     result = await db.execute(stmt)
     rows = result.all()
-    
-    # In a real implementation, you might filter out results below the similarity threshold.
-    # We can do this in Python or by adding a WHERE clause using the cosine_distance operator.
-    
-    results = []
-    for chunk, doc in rows:
-        results.append({
+
+    results = [
+        {
             "chunk_id": str(chunk.id),
             "document_id": str(doc.id),
+            "document_key": doc.document_key,
             "title": doc.title,
-            "filename": doc.filename,
-            "category": doc.category,
+            "document_type": doc.document_type,
             "content": chunk.content,
             "metadata": chunk.metadata_json,
-        })
-        
+            "similarity": round(1.0 - float(dist), 4),
+        }
+        for chunk, doc, dist in rows
+    ]
+
     return {
         "success": True,
         "query": query,
-        "results": results
+        "similarity_threshold": threshold,
+        "results": results,
     }

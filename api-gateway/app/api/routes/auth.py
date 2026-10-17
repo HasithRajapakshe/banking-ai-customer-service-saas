@@ -162,4 +162,4 @@ async def read_users_me(
 async def read_user_roles(
     roles: list[Role] = Depends(get_current_user_roles),
 ):
-    return [role.name for role in roles]
+    return [role.role_code for role in roles]

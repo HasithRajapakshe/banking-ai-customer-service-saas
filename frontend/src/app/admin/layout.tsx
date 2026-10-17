@@ -35,7 +35,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return res.json();
       })
       .then(roles => {
-        if (!roles.includes("system_admin") && !roles.includes("admin")) {
+        if (!roles.includes("ADMIN")) {
            router.push("/dashboard");
         }
       })
