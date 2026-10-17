@@ -15,7 +15,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      # v2: created by Alembic (0001_initial_schema). Pre-Alembic databases lived in
+      # "postgres_data"; see README for restoring from backups/ instead.
+      - postgres_data_v2:/var/lib/postgresql/data
     healthcheck:
       test:
         [
@@ -226,5 +228,5 @@ services:
         condition: service_healthy
 
 volumes:
-  postgres_data:
+  postgres_data_v2:
   redis_data:
