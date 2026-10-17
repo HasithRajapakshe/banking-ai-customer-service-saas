@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -9,6 +10,13 @@ from app.clients.banking_adapter_client import (
 from app.core.config import settings
 from app.core.middleware import CorrelationIdMiddleware
 from app.tools.registry import register_default_tools
+
+# Without this the root logger stays at WARNING and INFO audit events
+# ("Tool executed", "Tool awaiting confirmation") are dropped.
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 
 
 @asynccontextmanager
