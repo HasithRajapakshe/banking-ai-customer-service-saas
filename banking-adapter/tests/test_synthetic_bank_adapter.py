@@ -300,6 +300,19 @@ async def test_get_account_transactions(adapter):
 # === Cards ===
 
 @pytest.mark.asyncio
+async def test_get_cards(adapter):
+    adapter.client.request.return_value = [_card_data()]
+    result = await adapter.get_cards(CUSTOMER_ID)
+    assert isinstance(result, list)
+    assert isinstance(result[0], CardDTO)
+    call = adapter.client.request.await_args.kwargs
+    assert call["method"] == "GET"
+    assert call["path"] == f"/api/v1/customers/{CUSTOMER_ID}/cards"
+    # The bank enforces ownership from the trusted customer context.
+    assert call["customer_id"] == CUSTOMER_ID
+
+
+@pytest.mark.asyncio
 async def test_get_card(adapter):
     adapter.client.request.return_value = _card_data()
     result = await adapter.get_card(CUSTOMER_ID, CARD_ID)

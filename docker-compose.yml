@@ -58,8 +58,7 @@ services:
   synthetic-bank:
     build: ./synthetic-bank
     container_name: synthetic-bank
-    ports:
-      - "8000:8000"
+    # Internal only (port 8000 on the compose network); not published to the host.
     environment:
       DATABASE_URL: *database-url
       INTERNAL_API_KEY: ${SYNTHETIC_BANK_API_KEY:-synthetic-bank-internal-key-dev}
@@ -83,8 +82,7 @@ services:
   banking-adapter:
     build: ./banking-adapter
     container_name: banking-adapter
-    ports:
-      - "8002:8002"
+    # Internal only (port 8002 on the compose network); not published to the host.
     environment:
       SYNTHETIC_BANK_BASE_URL: http://synthetic-bank:8000
       SYNTHETIC_BANK_API_KEY: ${SYNTHETIC_BANK_API_KEY:-synthetic-bank-internal-key-dev}
@@ -107,8 +105,7 @@ services:
   tool-gateway:
     build: ./tool-gateway
     container_name: tool-gateway
-    ports:
-      - "8003:8003"
+    # Internal only (port 8003 on the compose network); not published to the host.
     environment:
       BANKING_ADAPTER_BASE_URL: http://banking-adapter:8002
       BANKING_ADAPTER_API_KEY: ${BANKING_ADAPTER_API_KEY:-banking-adapter-internal-key-dev}
@@ -149,8 +146,7 @@ services:
   rag:
     build: ./rag
     container_name: rag-service
-    ports:
-      - "8005:8005"
+    # Internal only (port 8005 on the compose network); not published to the host.
     environment:
       APP_ENV: development
       DATABASE_URL: *database-url
@@ -175,12 +171,23 @@ services:
   ai-agent:
     build: ./ai-agent
     container_name: ai-agent
-    ports:
-      - "8004:8004"
+    # Internal only (port 8004 on the compose network); not published to the host.
     environment:
       APP_ENV: development
       TOOL_GATEWAY_BASE_URL: http://tool-gateway:8003
       RAG_BASE_URL: http://rag:8005
+      # Model gateway. "deterministic" = keyword router only (no LLM).
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-ollama}
+      MODEL_NAME: ${MODEL_NAME:-qwen2.5:7b}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-60}
+    extra_hosts:
+      # Lets the container reach Ollama running on the host (Linux needs this;
+      # Docker Desktop provides it already).
+      - "host.docker.internal:host-gateway"
     depends_on:
       tool-gateway:
         condition: service_healthy

@@ -60,6 +60,19 @@ async def test_customer_cannot_read_other_customers_card(client):
 
 
 @pytest.mark.asyncio(loop_scope="function")
+async def test_customer_lists_only_own_cards(client):
+    resp = await client.get(f"/api/v1/customers/{CUSTOMER_A_ID}/cards", headers=headers_for(CUSTOMER_A_ID))
+    assert resp.status_code == 200
+    assert [card["id"] for card in resp.json()] == [str(CARD_A_ID)]
+
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_customer_cannot_list_other_customers_cards(client):
+    resp = await client.get(f"/api/v1/customers/{CUSTOMER_B_ID}/cards", headers=headers_for(CUSTOMER_A_ID))
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio(loop_scope="function")
 async def test_customer_cannot_block_other_customers_card(client, db):
     resp = await client.post(f"/api/v1/cards/{CARD_B_ID}/block", headers=headers_for(CUSTOMER_A_ID))
     assert resp.status_code == 404

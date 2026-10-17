@@ -3,8 +3,36 @@ from app.clients.banking_adapter_client import (
 )
 from app.core.risk import RiskLevel
 from app.schemas.context import ToolExecutionContext
-from app.schemas.tool import CardIdInput, CardTransactionsInput
+from app.schemas.tool import CardIdInput, CardTransactionsInput, EmptyInput
 from app.tools.base import BaseTool
+
+
+class ListCardsTool(BaseTool):
+    name = "card.list"
+
+    description = (
+        "List all cards belonging to the current customer "
+        "(id, card type, last 4 digits, status)."
+    )
+
+    risk_level = RiskLevel.LOW
+    permission = "card.read"
+
+    input_model = EmptyInput
+
+    async def execute(
+        self,
+        context: ToolExecutionContext,
+        arguments: EmptyInput,
+    ):
+        return await banking_adapter_client.request(
+            method="GET",
+            path=(
+                f"/api/v1/customers/"
+                f"{context.customer_id}/cards"
+            ),
+            correlation_id=context.correlation_id,
+        )
 
 
 class GetCardDetailsTool(BaseTool):

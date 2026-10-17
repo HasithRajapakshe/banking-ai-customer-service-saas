@@ -31,6 +31,26 @@ def raise_adapter_error(exc: BankingAdapterError) -> None:
 
 
 @router.get(
+    "",
+    response_model=list[CardDTO],
+)
+async def list_cards(
+    customer_id: uuid.UUID,
+    request: Request,
+):
+    provider = get_banking_provider()
+
+    try:
+        return await provider.get_cards(
+            customer_id=customer_id,
+            correlation_id=get_correlation_id(request),
+        )
+
+    except BankingAdapterError as exc:
+        raise_adapter_error(exc)
+
+
+@router.get(
     "/{card_id}",
     response_model=CardDTO,
 )

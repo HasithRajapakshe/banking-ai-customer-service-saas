@@ -42,6 +42,10 @@ class ChatResponse(BaseModel):
     status: AgentStatus
     message: str
     intent: str
+    # Which router decided: llm, keyword (no model configured), or
+    # keyword_fallback (the model failed or proposed something invalid).
+    router: str = "keyword"
+    cited_documents: list[str] = Field(default_factory=list)
     tool_name: str | None = None
     tool_executed: bool = False
     requires_confirmation: bool = False

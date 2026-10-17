@@ -39,10 +39,10 @@ class TestToolRegistry:
         assert result[0].name == "account.get_balance"
 
     def test_default_tools_count(self):
-        """Verify all 25 tools are registered."""
+        """Verify all 26 tools are registered."""
         from app.tools.registry import _DEFAULT_TOOLS
 
-        assert len(_DEFAULT_TOOLS) == 25
+        assert len(_DEFAULT_TOOLS) == 26
 
     def test_tool_listing_returns_metadata(self):
         from app.tools.account_tools import GetAccountBalanceTool

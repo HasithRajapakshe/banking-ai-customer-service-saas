@@ -23,6 +23,9 @@ async def list_tools():
             "risk_level": tool.risk_level,
             "requires_confirmation": tool.requires_confirmation,
             "permission": tool.permission,
+            # JSON Schema of the arguments, so clients (the AI agent) can
+            # build tool definitions without hard-coding them.
+            "input_schema": tool.input_model.model_json_schema(),
         }
         for tool in tool_registry.all()
     ]
@@ -49,6 +52,7 @@ async def get_tool(tool_name: str):
         "risk_level": tool.risk_level,
         "requires_confirmation": tool.requires_confirmation,
         "permission": tool.permission,
+        "input_schema": tool.input_model.model_json_schema(),
     }
 
 

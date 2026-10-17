@@ -1,15 +1,13 @@
-import json
 import logging
 import re
 from typing import Any
 
-from pydantic import BaseModel, Field
-
-from app.core.config import settings
 from app.schemas.intent import IntentDecision
 
 logger = logging.getLogger("ai_agent.intent_router")
 
+
+GREETING_RE = re.compile(r"\b(hello|hi|hey|good morning|good evening)\b")
 
 UUID_RE = re.compile(
     r"\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-"
@@ -17,36 +15,12 @@ UUID_RE = re.compile(
 )
 
 
-class LLMIntentOutput(BaseModel):
-    intent: str = Field(description="The classified intent, e.g., list_accounts, account_balance, card_block, knowledge_question, unknown")
-    route: str = Field(description="The routing decision: 'tool' if a banking tool is needed, 'general' for RAG/greeting, 'clarify' if more information is needed.")
-    tool_name: str | None = Field(None, description="The name of the tool to execute, e.g., 'account.list', 'card.block'")
-    arguments: dict[str, Any] = Field(default_factory=dict, description="Arguments to pass to the tool.")
-    clarification: str | None = Field(None, description="The message to display to the user if clarification is needed.")
-    confidence: float = Field(description="Confidence score from 0.0 to 1.0.")
-
-
 class IntentRouter:
-    """LLM-backed Phase-6 router with deterministic fallback.
+    """Deterministic keyword router.
+
+    Used when no model provider is configured, and as the fallback whenever
+    the LLM router fails, times out or proposes an unknown tool.
     """
-
-    def __init__(self):
-        self.llm = self._init_llm()
-
-    def _init_llm(self):
-        if settings.model_provider == "deterministic":
-            return None
-        
-        try:
-            if settings.model_provider == "openai":
-                from langchain_openai import ChatOpenAI
-                return ChatOpenAI(model=settings.model_name, temperature=0).with_structured_output(LLMIntentOutput)
-            elif settings.model_provider == "anthropic":
-                from langchain_anthropic import ChatAnthropic
-                return ChatAnthropic(model=settings.model_name, temperature=0).with_structured_output(LLMIntentOutput)
-        except Exception as exc:
-            logger.warning("Failed to initialize LLM provider: %s", exc)
-            return None
 
     def classify(
         self,
@@ -67,7 +41,7 @@ class IntentRouter:
         text = " ".join(message.lower().split())
         ids = UUID_RE.findall(message)
 
-        if any(x in text for x in ["hello", "hi ", "hey", "good morning", "good evening"]):
+        if GREETING_RE.search(text):
             return IntentDecision(intent="greeting", route="general", confidence=0.98)
 
         if "profile" in text or "my details" in text:
@@ -82,20 +56,21 @@ class IntentRouter:
             return self._id_tool("account_balance", "account.get_balance", "account_id", ids)
 
         if "account" in text and "transaction" in text:
-            if not ids:
-                return self._clarify("account_transactions", "Please provide the account ID (UUID) whose transactions you want to view.")
-            return self._tool("account_transactions", "account.get_transactions", {"account_id": ids[0], "limit": 20, "offset": 0})
+            args = {"account_id": ids[0]} if ids else {}
+            return self._tool("account_transactions", "account.get_transactions", {**args, "limit": 20, "offset": 0})
 
         if "block" in text and "card" in text:
-            return self._id_tool("block_card", "card.block", "card_id", ids)
+            return self._resolvable_tool("block_card", "card.block", "card_id", ids)
 
         if ("card" in text and "transaction" in text) or ("decline" in text and "transaction" in text):
-            if not ids:
-                return self._clarify("card_transactions", "Please provide the card ID (UUID) whose transactions you want to view.")
-            return self._tool("card_transactions", "card.get_transactions", {"card_id": ids[0], "limit": 20, "offset": 0})
+            args = {"card_id": ids[0]} if ids else {}
+            return self._tool("card_transactions", "card.get_transactions", {**args, "limit": 20, "offset": 0})
 
         if "card" in text and any(x in text for x in ["details", "status", "information"]):
-            return self._id_tool("card_details", "card.get_details", "card_id", ids)
+            return self._resolvable_tool("card_details", "card.get_details", "card_id", ids)
+
+        if "card" in text and any(x in text for x in ["list", "show", "my cards", "all cards"]):
+            return self._tool("list_cards", "card.list", {})
 
         if "beneficiar" in text and any(x in text for x in ["list", "show", "my"]):
             return self._tool("list_beneficiaries", "beneficiary.list", {"limit": 20, "offset": 0})
@@ -126,24 +101,6 @@ class IntentRouter:
                 clarification=None,
             )
 
-        # Fallback to LLM if configured
-        if self.llm:
-            try:
-                result = self.llm.invoke([
-                    ("system", "You are an AI banking assistant intent classifier. Classify the following user message."),
-                    ("user", message)
-                ])
-                return IntentDecision(
-                    intent=result.intent,
-                    route=result.route,
-                    tool_name=result.tool_name,
-                    arguments=result.arguments,
-                    clarification=result.clarification,
-                    confidence=result.confidence,
-                )
-            except Exception as exc:
-                logger.error("LLM classification failed: %s", exc)
-
         return self._clarify(
             "unknown",
             "I could not safely map that request to an approved banking tool. Please state the banking task more specifically.",
@@ -156,6 +113,10 @@ class IntentRouter:
     @staticmethod
     def _clarify(intent: str, message: str) -> IntentDecision:
         return IntentDecision(intent=intent, route="clarify", confidence=0.8, clarification=message)
+
+    def _resolvable_tool(self, intent: str, tool_name: str, arg_name: str, ids: list[str]) -> IntentDecision:
+        """Card/account tools: a missing ID is resolved later from the customer's own items."""
+        return self._tool(intent, tool_name, {arg_name: ids[0]} if ids else {})
 
     def _id_tool(self, intent: str, tool_name: str, arg_name: str, ids: list[str]) -> IntentDecision:
         if not ids:

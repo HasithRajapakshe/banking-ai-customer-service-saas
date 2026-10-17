@@ -124,6 +124,23 @@ class SyntheticBankAdapter(BankingProvider):
     # Cards
     # =========================
 
+    async def get_cards(
+        self,
+        customer_id: uuid.UUID,
+        correlation_id: str | None = None,
+    ) -> list[CardDTO]:
+        data = await self.client.request(
+            method="GET",
+            path=f"/api/v1/customers/{customer_id}/cards",
+            customer_id=customer_id,
+            correlation_id=correlation_id,
+        )
+
+        return [
+            CardDTO.model_validate(card)
+            for card in data
+        ]
+
     async def get_card(
         self,
         customer_id: uuid.UUID,

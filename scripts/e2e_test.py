@@ -158,6 +158,27 @@ def test_block_card_requires_confirmation_and_completes(alice, bob, alice_card):
     assert replay.status_code == 409, replay.text
 
 
+def test_block_my_card_without_an_id_resolves_the_card(alice, alice_card):
+    """Natural language, no UUID: the agent finds Alice's card itself (card.list)."""
+    card_id, last4 = alice_card
+    conversation_id = str(uuid.uuid4())
+
+    body = ok_json(alice.chat(conversation_id, "I lost my card, please block my card"))
+
+    if body["status"] == "needs_clarification":
+        # Acceptable only if it asks about Alice's own card.
+        assert last4 in body["message"], body
+        return
+    assert body["status"] == "confirmation_required", body
+    assert body["action_summary"] == f"Block card ending {last4}"
+    assert card_id not in body["message"]  # the resolved ID is never shown
+    assert card_status_via_agent(alice, card_id) == "active"
+
+    done = ok_json(alice.chat(conversation_id, "Confirm", body["confirmation_challenge"]))
+    assert done["tool_executed"] is True
+    assert card_status_via_agent(alice, card_id) == "blocked"
+
+
 def test_client_cannot_pick_a_tool_or_self_confirm(alice, alice_card):
     card_id, _ = alice_card
     resp = alice.client.post(

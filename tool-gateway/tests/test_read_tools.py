@@ -60,6 +60,44 @@ async def test_customer_get_profile():
 
 
 # =========================
+# card.list
+# =========================
+
+
+@pytest.mark.asyncio(loop_scope="function")
+@respx.mock
+async def test_card_list():
+    route = respx.get(f"{BASE}/api/v1/customers/{TEST_CUSTOMER_ID}/cards").mock(
+        return_value=Response(200, json=[{"id": str(TEST_CARD_ID), "card_last4": "6768"}])
+    )
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post("/api/v1/tools/execute", json=make_execute_payload("card.list"))
+
+    data = resp.json()
+    assert data["success"] is True
+    assert data["executed"] is True
+    assert data["requires_confirmation"] is False
+    assert data["data"] == [{"id": str(TEST_CARD_ID), "card_last4": "6768"}]
+    # The customer comes from the trusted context, never from arguments.
+    assert route.call_count == 1
+
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_card_list_rejects_customer_argument():
+    other_customer = "bbbbbbbb-0000-0000-0000-000000000002"
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        resp = await client.post(
+            "/api/v1/tools/execute",
+            json=make_execute_payload("card.list", arguments={"customer_id": other_customer}),
+        )
+
+    data = resp.json()
+    assert data["success"] is False
+    assert data["error"]["code"] == "INVALID_TOOL_ARGUMENTS"
+
+
+# =========================
 # account.list
 # =========================
 

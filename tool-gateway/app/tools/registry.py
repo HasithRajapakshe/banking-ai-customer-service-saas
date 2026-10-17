@@ -13,6 +13,7 @@ from app.tools.beneficiary_tools import (
 )
 from app.tools.card_tools import (
     BlockCardTool,
+    ListCardsTool,
     GetCardDetailsTool,
     GetCardTransactionsTool,
 )
@@ -74,6 +75,7 @@ _DEFAULT_TOOLS = [
     GetAccountBalanceTool,
     GetAccountTransactionsTool,
     # Cards
+    ListCardsTool,
     GetCardDetailsTool,
     GetCardTransactionsTool,
     BlockCardTool,

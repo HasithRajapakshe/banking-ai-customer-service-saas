@@ -28,3 +28,8 @@ class AgentState(TypedDict, total=False):
     requires_confirmation: bool
     confirmation_challenge: str | None
     action_summary: str | None
+
+    router: str  # llm | keyword | keyword_fallback
+    knowledge: list[str] | None
+    cited_documents: list[str]
+    validation_errors: list[str]
