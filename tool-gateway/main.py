@@ -8,6 +8,7 @@ from app.clients.banking_adapter_client import (
     banking_adapter_client,
 )
 from app.core.config import settings
+from app.core.database import dispose_engine
 from app.core.middleware import CorrelationIdMiddleware
 from app.tools.registry import register_default_tools
 
@@ -28,6 +29,7 @@ async def lifespan(app: FastAPI):
     yield
 
     await banking_adapter_client.close()
+    await dispose_engine()
 
 
 app = FastAPI(

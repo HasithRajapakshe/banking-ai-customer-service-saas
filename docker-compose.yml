@@ -3,6 +3,8 @@
 # Values in a .env file override these defaults.
 
 x-database-url: &database-url ${DATABASE_URL:-postgresql+asyncpg://banking_app:change_me_in_production@postgres:5432/banking_ai}
+# Signs/verifies the API Gateway's 60 s internal identity token (separate from JWT_SECRET).
+x-internal-jwt-secret: &internal-jwt-secret ${INTERNAL_JWT_SECRET:-change-this-internal-service-secret}
 
 services:
   postgres:
@@ -110,11 +112,15 @@ services:
       BANKING_ADAPTER_BASE_URL: http://banking-adapter:8002
       BANKING_ADAPTER_API_KEY: ${BANKING_ADAPTER_API_KEY:-banking-adapter-internal-key-dev}
       REDIS_URL: redis://redis:6379/2
+      DATABASE_URL: *database-url
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
     depends_on:
       banking-adapter:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test:
         [
@@ -153,6 +159,7 @@ services:
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-mock}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
     depends_on:
       rag-backfill:
         condition: service_completed_successfully
@@ -183,7 +190,8 @@ services:
       GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-60}
+      # A whole turn must fit inside the 60 s internal token.
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-25}
     extra_hosts:
       # Lets the container reach Ollama running on the host (Linux needs this;
       # Docker Desktop provides it already).
@@ -219,7 +227,7 @@ services:
       AI_AGENT_BASE_URL: http://ai-agent:8004
       RAG_BASE_URL: http://rag:8005
       TENANT_ID: ${TENANT_ID:-f498100f-80c4-467e-84ec-ebfe5470b442}
-      SYNTHETIC_BANK_API_KEY: ${SYNTHETIC_BANK_API_KEY:-synthetic-bank-internal-key-dev}
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -240,7 +248,10 @@ services:
       retries: 10
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
     container_name: frontend
     ports:
       - "3000:3000"

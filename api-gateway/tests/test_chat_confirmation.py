@@ -221,3 +221,31 @@ async def test_other_user_cannot_use_challenge(client, agent):
     assert in_own_conv.status_code == 409
     assert agent.await_count == calls
     assert (await pending_action_service.get(alice_conversation)) is not None
+
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_cancel_discards_the_pending_action(client, agent):
+    conversation_id = uuid.uuid4()
+    await request_block(client, agent, conversation_id)
+
+    resp = await client.delete(f"/api/v1/chat/conversations/{conversation_id}/pending-action")
+
+    assert resp.status_code == 204
+    assert await pending_action_service.get(conversation_id) is None
+    confirm = await client.post(
+        "/api/v1/chat",
+        json={"message": "Confirm", "conversation_id": str(conversation_id), "challenge_code": "ABCD1234"},
+    )
+    assert confirm.status_code == 409
+
+
+@pytest.mark.asyncio(loop_scope="function")
+async def test_other_user_cannot_cancel_someone_elses_pending_action(client, agent):
+    conversation_id = uuid.uuid4()
+    await request_block(client, agent, conversation_id)
+
+    as_user(BOB)
+    resp = await client.delete(f"/api/v1/chat/conversations/{conversation_id}/pending-action")
+
+    assert resp.status_code == 204  # reveals nothing
+    assert await pending_action_service.get(conversation_id) is not None

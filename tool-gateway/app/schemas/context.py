@@ -14,3 +14,5 @@ class ToolExecutionContext(BaseModel):
 
     correlation_id: str
     channel: str | None = None
+    # From the verified internal identity token.
+    roles: tuple[str, ...] = ()

@@ -1,12 +1,42 @@
 "use client";
 
-import { useState } from "react";
-import { Upload, FileText, Loader2, Search } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Upload, FileText, Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { apiFetch } from "@/lib/api";
+import type { AuditPage } from "@/lib/types";
+
+const PAGE_SIZE = 15;
+
+async function fetchAudit(offset: number): Promise<AuditPage | null> {
+  const res = await apiFetch(`/api/v1/admin/audit?limit=${PAGE_SIZE}&offset=${offset}`);
+  return res.ok ? res.json() : null;
+}
 
 export default function AdminDashboard() {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
+
+  const [audit, setAudit] = useState<AuditPage | null>(null);
+  const [auditError, setAuditError] = useState("");
+  const [offset, setOffset] = useState(0);
+
+  const loadAudit = useCallback((from: number) => {
+    return fetchAudit(from)
+      .then(page => {
+        if (page) {
+          setAudit(page);
+          setAuditError("");
+        } else {
+          setAuditError("Could not load the audit log.");
+        }
+      })
+      .catch(() => setAuditError("Could not load the audit log."));
+  }, []);
+
+  useEffect(() => {
+    loadAudit(offset);
+  }, [loadAudit, offset]);
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,12 +49,8 @@ export default function AdminDashboard() {
     formData.append("file", file);
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8001/api/v1/admin/rag/documents", {
+      const res = await apiFetch("/api/v1/admin/rag/documents", {
         method: "POST",
-        headers: {
-          "Authorization": `Bearer ${token}`
-        },
         body: formData,
       });
 
@@ -41,6 +67,8 @@ export default function AdminDashboard() {
     }
   };
 
+  const total = audit?.total ?? 0;
+
   return (
     <div className="flex flex-col h-full overflow-y-auto p-8 gap-8">
       <div>
@@ -48,7 +76,7 @@ export default function AdminDashboard() {
         <p className="text-gray-400">Manage RAG knowledge base and view system statistics.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* RAG Ingestion Card */}
         <div className="glass-panel p-6 rounded-2xl">
           <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
@@ -100,15 +128,75 @@ export default function AdminDashboard() {
           </form>
         </div>
 
-        {/* Audit Logs Placeholder */}
-        <div className="glass-panel p-6 rounded-2xl">
+        {/* Audit log */}
+        <div className="glass-panel p-6 rounded-2xl flex flex-col min-w-0">
           <h2 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
             <Search className="w-5 h-5 text-purple-400" />
-            Audit Logs
+            Audit Log
+            {audit && <span className="text-sm font-normal text-gray-500">({total} entries)</span>}
           </h2>
-          <div className="flex flex-col items-center justify-center h-64 border border-surface-border rounded-xl bg-surface/50 text-gray-500">
-            <p>System audit logs will appear here.</p>
-          </div>
+
+          {auditError && <p className="text-sm text-red-400 mb-3">{auditError}</p>}
+          {!audit && !auditError && (
+            <div className="flex items-center justify-center h-40"><Loader2 className="w-6 h-6 animate-spin text-primary-500" /></div>
+          )}
+
+          {audit && (
+            <>
+              <div className="overflow-x-auto border border-surface-border rounded-xl">
+                <table className="w-full text-xs text-left">
+                  <thead className="bg-surface text-gray-400">
+                    <tr>
+                      <th className="px-3 py-2 font-medium">Time</th>
+                      <th className="px-3 py-2 font-medium">Action</th>
+                      <th className="px-3 py-2 font-medium">Tool</th>
+                      <th className="px-3 py-2 font-medium">Result</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-surface-border text-gray-300">
+                    {audit.items.length === 0 && (
+                      <tr><td colSpan={4} className="px-3 py-6 text-center text-gray-500">No audit entries yet.</td></tr>
+                    )}
+                    {audit.items.map(item => (
+                      <tr key={item.id}>
+                        <td className="px-3 py-2 whitespace-nowrap">{new Date(item.created_at).toLocaleString()}</td>
+                        <td className="px-3 py-2 font-mono">{item.action}</td>
+                        <td className="px-3 py-2 font-mono">{String(item.metadata.tool_name ?? item.resource_type ?? "—")}</td>
+                        <td className={`px-3 py-2 ${item.success ? "text-green-400" : "text-red-400"}`}>
+                          {item.success ? "ok" : String(item.metadata.error_code ?? "failed")}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex items-center justify-between mt-3 text-xs text-gray-400">
+                <span>
+                  {total === 0 ? 0 : offset + 1}–{Math.min(offset + PAGE_SIZE, total)} of {total}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    aria-label="Previous page"
+                    disabled={offset === 0}
+                    onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+                    className="p-1.5 rounded-lg border border-surface-border disabled:opacity-40 hover:bg-white/5"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next page"
+                    disabled={offset + PAGE_SIZE >= total}
+                    onClick={() => setOffset(offset + PAGE_SIZE)}
+                    className="p-1.5 rounded-lg border border-surface-border disabled:opacity-40 hover:bg-white/5"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -1,3 +1,6 @@
 -r requirements.txt
 pgvector==0.2.5
 pytest==8.3.4
+# tool-gateway repositories are tested against the real schema
+pydantic==2.10.4
+pydantic-settings==2.7.0

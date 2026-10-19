@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Lock, Shield, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { apiFetch, login } from "@/lib/api";
 
 export default function LandingPage() {
   const [email, setEmail] = useState("");
@@ -18,24 +19,11 @@ export default function LandingPage() {
     setError("");
 
     try {
-      // Ensure API Gateway is running on 8001
-      const res = await fetch("http://localhost:8001/api/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // The API's LoginRequest field is "username"; its value is the email.
-        body: JSON.stringify({ username: email, password }),
-      });
-
-      if (!res.ok) {
+      if (!(await login(email, password))) {
         throw new Error("Invalid credentials");
       }
 
-      const data = await res.json();
-      localStorage.setItem("token", data.access_token);
-
-      const rolesRes = await fetch("http://localhost:8001/api/v1/auth/me/roles", {
-        headers: { Authorization: `Bearer ${data.access_token}` },
-      });
+      const rolesRes = await apiFetch("/api/v1/auth/me/roles");
       const roles: string[] = rolesRes.ok ? await rolesRes.json() : [];
       router.push(roles.includes("ADMIN") ? "/admin" : "/dashboard");
     } catch (err: unknown) {

@@ -13,6 +13,17 @@ class Settings(BaseSettings):
 
     redis_url: str = "redis://localhost:6379/2"
 
+    # Audit persistence and role -> permission lookups. Unset in unit tests;
+    # in a running stack every execution is written to tool_execution/audit_log.
+    database_url: str | None = None
+    permission_cache_ttl_seconds: float = 60.0
+
+    # Internal identity token signed by the API Gateway (not the user JWT).
+    internal_jwt_secret: str = "change-this-internal-service-secret"
+    internal_jwt_issuer: str = "api-gateway"
+    internal_jwt_audience: str = "internal-services"
+    internal_jwt_leeway_seconds: int = 5
+
     request_timeout_seconds: float = 10.0
 
     max_connections: int = 20

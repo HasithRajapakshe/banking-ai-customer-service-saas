@@ -1,4 +1,4 @@
-"""Seed API Gateway reference data (roles, permissions) and demo users.
+"""Seed the demo users (roles and permissions come from Alembic revision 0002).
 
 Idempotent: safe to run on every `docker compose up`. All SQL uses bound
 parameters.
@@ -24,43 +24,6 @@ DATABASE_URL = os.environ.get(
 TENANT_ID = uuid.UUID(os.environ.get("TENANT_ID", "f498100f-80c4-467e-84ec-ebfe5470b442"))
 DEMO_PASSWORD = "password123"
 
-# (role_code, role_name, description); tenant_id NULL = global role.
-ROLES = [
-    ("CUSTOMER", "Customer", "Standard banking customer"),
-    ("SUPPORT_AGENT", "Support Agent", "Human customer support agent"),
-    ("ADMIN", "Administrator", "Tenant administrator"),
-]
-
-# (permission_code, permission_name, description)
-PERMISSIONS = [
-    ("chat.read", "Read conversations", "Read customer conversations"),
-    ("chat.write", "Send messages", "Send customer service messages"),
-    ("account.read", "Read account information", "View authorized account information"),
-    ("transaction.read", "Read transactions", "View authorized account transactions"),
-    ("card.read", "Read card information", "View authorized card information"),
-    ("card.block", "Block card", "Block an authorized customer card"),
-    ("loan.read", "Read loan information", "View authorized loan information"),
-    ("payment.read", "Read payments", "View payment information"),
-    ("payment.create", "Create payment", "Create an authorized payment"),
-    ("complaint.create", "Create complaint", "Create a customer complaint"),
-    ("complaint.read", "Read complaint", "Read complaint information"),
-    ("ticket.create", "Create support ticket", "Create customer support ticket"),
-    ("ticket.read", "Read support ticket", "Read support ticket"),
-    ("knowledge.read", "Read knowledge base", "Retrieve approved knowledge"),
-    ("knowledge.write", "Manage knowledge base", "Create and update knowledge"),
-    ("knowledge.publish", "Publish knowledge", "Approve and publish knowledge"),
-    ("analytics.read", "Read analytics", "View tenant analytics"),
-    ("admin.users", "Manage users", "Manage tenant users"),
-    ("admin.roles", "Manage roles", "Manage roles and permissions"),
-    ("audit.read", "Read audit logs", "View security and activity audit logs"),
-    # Checked by api-gateway admin routes.
-    ("knowledge.manage", "Manage knowledge documents", "Upload and list knowledge documents"),
-    ("users.manage", "Manage users (admin API)", "List and manage tenant users"),
-]
-
-ROLE_PERMISSIONS = {
-    "ADMIN": ["knowledge.manage", "audit.read", "users.manage"],
-}
 
 # (email, first_name, last_name, role_code, customer_slot); slot None = no customer.
 DEMO_USERS = [
@@ -69,49 +32,6 @@ DEMO_USERS = [
     ("bob@example.com", "Bob", "Jones", "CUSTOMER", 1),
 ]
 
-
-async def seed_reference_data(conn: AsyncConnection) -> None:
-    for role_code, role_name, description in ROLES:
-        await conn.execute(
-            text(
-                """
-                INSERT INTO role (tenant_id, role_code, role_name, description)
-                VALUES (NULL, :role_code, :role_name, :description)
-                ON CONFLICT (role_code) WHERE tenant_id IS NULL DO NOTHING
-                """
-            ),
-            {"role_code": role_code, "role_name": role_name, "description": description},
-        )
-
-    for code, name, description in PERMISSIONS:
-        await conn.execute(
-            text(
-                """
-                INSERT INTO permission (permission_code, permission_name, description)
-                VALUES (:code, :name, :description)
-                ON CONFLICT (permission_code) DO NOTHING
-                """
-            ),
-            {"code": code, "name": name, "description": description},
-        )
-
-    for role_code, permission_codes in ROLE_PERMISSIONS.items():
-        for permission_code in permission_codes:
-            await conn.execute(
-                text(
-                    """
-                    INSERT INTO role_permission (role_id, permission_id)
-                    SELECT r.id, p.id
-                    FROM role r, permission p
-                    WHERE r.tenant_id IS NULL
-                      AND r.role_code = :role_code
-                      AND p.permission_code = :permission_code
-                    ON CONFLICT DO NOTHING
-                    """
-                ),
-                {"role_code": role_code, "permission_code": permission_code},
-            )
-    print(f"Reference data: {len(ROLES)} roles, {len(PERMISSIONS)} permissions.")
 
 
 async def _demo_customer_ids(conn: AsyncConnection) -> list[uuid.UUID]:
@@ -194,7 +114,6 @@ async def main() -> None:
     engine = create_async_engine(DATABASE_URL)
     try:
         async with engine.begin() as conn:
-            await seed_reference_data(conn)
             await seed_demo_users(conn)
     finally:
         await engine.dispose()

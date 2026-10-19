@@ -4,7 +4,8 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { Send, CreditCard, Wallet, TrendingUp, Sparkles, User, Bot, Loader2, ShieldAlert } from "lucide-react";
 import { motion } from "framer-motion";
 import { v4 as uuidv4 } from "uuid";
-import type { Account } from "@/lib/types";
+import { apiFetch } from "@/lib/api";
+import type { Account, Card } from "@/lib/types";
 
 interface Message {
   id: string;
@@ -29,16 +30,20 @@ interface PendingConfirmation {
 }
 
 async function fetchAccounts(): Promise<Account[] | null> {
-  const token = localStorage.getItem("token");
-  const res = await fetch("http://localhost:8001/api/v1/accounts", {
-    headers: { Authorization: `Bearer ${token}` }
-  });
+  const res = await apiFetch("/api/v1/accounts");
+  return res.ok ? res.json() : null;
+}
+
+async function fetchCards(): Promise<Card[] | null> {
+  const res = await apiFetch("/api/v1/cards");
   return res.ok ? res.json() : null;
 }
 
 export default function Dashboard() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
+  const [cards, setCards] = useState<Card[]>([]);
+  const [loadingCards, setLoadingCards] = useState(true);
   
   const [messages, setMessages] = useState<Message[]>([
     { id: "msg-0", role: "assistant", content: "Hello! I'm your Nexus AI Assistant. How can I help you manage your finances today?" }
@@ -59,9 +64,19 @@ export default function Dashboard() {
       .finally(() => setLoadingAccounts(false));
   }, []);
 
+  const refreshCards = useCallback(() => {
+    return fetchCards()
+      .then(data => {
+        if (data) setCards(data);
+      })
+      .catch(e => console.error(e))
+      .finally(() => setLoadingCards(false));
+  }, []);
+
   useEffect(() => {
     refreshAccounts();
-  }, [refreshAccounts]);
+    refreshCards();
+  }, [refreshAccounts, refreshCards]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -72,13 +87,9 @@ export default function Dashboard() {
     setIsTyping(true);
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8001/api/v1/chat", {
+      const res = await apiFetch("/api/v1/chat", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
           conversation_id: conversationId.current,
@@ -111,8 +122,9 @@ export default function Dashboard() {
         });
       }
 
-      // Refresh accounts in case the agent did something
+      // Refresh in case the agent did something (e.g. blocked a card)
       refreshAccounts();
+      refreshCards();
     } catch {
       setMessages(prev => [...prev, {
         id: uuidv4(),
@@ -142,6 +154,9 @@ export default function Dashboard() {
 
   const handleCancel = () => {
     setPending(null);
+    // Discard the server-side pending action too (it would expire in 5 min).
+    apiFetch(`/api/v1/chat/conversations/${conversationId.current}/pending-action`, { method: "DELETE" })
+      .catch(e => console.error(e));
     setMessages(prev => [...prev, {
       id: uuidv4(),
       role: "assistant",
@@ -197,6 +212,41 @@ export default function Dashboard() {
               ))
             )}
           </div>
+        </div>
+
+        {/* My cards */}
+        <div>
+          <h2 className="text-lg font-semibold text-white mb-3">My cards</h2>
+          {loadingCards ? (
+            <div className="h-20 glass-panel rounded-2xl animate-pulse flex items-center justify-center">
+              <Loader2 className="w-5 h-5 animate-spin text-primary-500" />
+            </div>
+          ) : cards.length === 0 ? (
+            <p className="text-sm text-gray-500">No cards found</p>
+          ) : (
+            <ul className="grid gap-3">
+              {cards.map(card => (
+                <li key={card.id} className="glass-panel px-4 py-3 rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400"><CreditCard className="w-4 h-4" /></div>
+                    <div>
+                      <p className="text-sm text-white capitalize">{card.card_type} card</p>
+                      <p className="text-xs font-mono text-gray-500">•••• {card.card_last4}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full border ${
+                      card.status === "active"
+                        ? "border-green-500/30 text-green-400 bg-green-500/10"
+                        : "border-red-500/30 text-red-400 bg-red-500/10"
+                    }`}
+                  >
+                    {card.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {/* Action Cards */}

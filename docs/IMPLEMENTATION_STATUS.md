@@ -1,6 +1,6 @@
 # Implementation Status
 
-Last updated: 2026-10-18, branch `fix/e2e-integration`.
+Last updated: 2026-10-19, branch `fix/e2e-integration`.
 
 **Summary:** one honest, green, end-to-end demo works. A clean
 `docker compose up -d --build` brings up every service; a customer can log in,
@@ -8,9 +8,10 @@ read their accounts, get a grounded knowledge-base answer, and block a card in
 natural language ("I lost my card, please block it", also in Singlish) through
 the full confirmation flow. With a local LLM (`qwen2.5:7b` via Ollama) the
 agent routes 97.6% of the 82 evaluation prompts correctly, against 69.5% for
-the keyword router, and confirmation safety is 100% for both. Several
-production concerns (service authentication, permission enforcement,
-persistent audit, observability, deployment) are **not** done; see
+the keyword router, and confirmation safety is 100% for both. Internal
+services authenticate every call with a short-lived identity token, tool
+permissions are enforced against roles, and every tool execution is audited
+in the database. Observability and deployment are **not** done; see
 [Remaining work](#remaining-work).
 
 The version of this file before this work reported every phase as complete.
@@ -32,7 +33,8 @@ counted individually), run on Python 3.12.
 | 2b | Postgres moved to a new volume `postgres_data_v2` (old pre-Alembic DB kept; dump in `backups/`) | `21dd458` | Stack healthy on the fresh volume; logins verified |
 | 3 | Confirmation flow end to end, server-side pending actions, public chat request locked down, RAG embedding backfill, e2e test + CI job | `27ce811` | tool-gateway 62, ai-agent 14, api-gateway 17, rag 20, e2e 4 (new); others unchanged and passing |
 | 4 | Docs, `.dockerignore` per service, "Tool awaiting confirmation" audit log, INFO logging in tool-gateway | `bafee6f` | tool-gateway 67; all suites passing |
-| 5 | Real AI agent: internal ports unpublished, model gateway (Ollama/Gemini/OpenAI/Anthropic + fake), LLM tool-calling over the tool-gateway catalogue with keyword fallback, `card.list` tool, "my card"/"my account" resolution, grounded RAG answers, `validate_response` node, more injection patterns, PII masking in logs, evaluation harness (82 prompts) | this commit | synthetic-bank 18, banking-adapter 89, tool-gateway 69, ai-agent 116, e2e 5; evaluation reports for keyword, fake and Ollama routers |
+| 5 | Real AI agent: internal ports unpublished, model gateway (Ollama/Gemini/OpenAI/Anthropic + fake), LLM tool-calling over the tool-gateway catalogue with keyword fallback, `card.list` tool, "my card"/"my account" resolution, grounded RAG answers, `validate_response` node, more injection patterns, PII masking in logs, evaluation harness (82 prompts) | `b0e6aa4` | synthetic-bank 18, banking-adapter 89, tool-gateway 69, ai-agent 116, e2e 5; evaluation reports for keyword, fake and Ollama routers |
+| 6 | Production hardening: internal identity token (api-gateway signs, tool-gateway/rag verify, identity only from the token), RBAC reference data in Alembic 0002 + permission enforcement, persistent audit (`tool_execution` + `audit_log`) and `/admin/audit`, `/accounts` + new `/cards` through the tool-gateway, frontend `NEXT_PUBLIC_API_URL` + in-memory token + silent refresh + "My cards", server-side cancel, tool-catalogue CI check | this commit | tool-gateway 102, ai-agent 121, api-gateway 42, rag 32, database 9, e2e 8 (adds direct attacks on tool-gateway); e2e passes with the keyword router and with Ollama |
 
 ### Current test suites
 
@@ -40,12 +42,13 @@ counted individually), run on Python 3.12.
 |---|---|---|
 | synthetic-bank | 18 | — |
 | banking-adapter | 89 | — |
-| tool-gateway | 69 | Redis |
-| ai-agent | 116 | — (fake LLM, in-memory doubles) |
-| api-gateway | 17 | — (fakeredis) |
-| rag | 20 | — |
-| database/tests (schema alignment) | 4 | PostgreSQL + pgvector |
-| scripts/e2e_test.py | 5 | Running compose stack (passes with the keyword router and with Ollama) |
+| tool-gateway | 102 | Redis |
+| ai-agent | 121 | — (fake LLM, in-memory doubles) |
+| api-gateway | 42 | — (fakeredis) |
+| rag | 32 | — |
+| database/tests (schema, RBAC data, audit SQL) | 9 | PostgreSQL + pgvector |
+| scripts/e2e_test.py | 8 | Running compose stack (passes with the keyword router and with Ollama) |
+| tool catalogue snapshot | `git diff --exit-code` | tool-gateway dependencies |
 | evaluation/run_eval.py | 82 prompts | — (keyword / fake); a model for the LLM run |
 | frontend | lint, typecheck, build | Node 20 |
 
@@ -100,6 +103,27 @@ How to read it:
   api-gateway stores the pending action per conversation and replays it on
   confirm; the public chat request only accepts `message`, `conversation_id`,
   `channel` and `challenge_code`.
+- **Service-to-service identity:** the api-gateway signs a 60 s HS256 token
+  (own secret, `iss`/`aud`) with tenant, customer, user, roles and
+  conversation; the agent forwards it; tool-gateway and rag verify it and take
+  identity only from it. Missing/expired/tampered/wrong-secret/wrong-audience
+  tokens are 401; body identity that disagrees with the token is 403 (and is
+  audited). Covered by unit tests in both services and by e2e attacks on the
+  tool-gateway from inside the Compose network.
+- **Permissions:** Alembic revision 0002 holds all RBAC reference data
+  (additive, idempotent; applied in place to the existing database). Every
+  tool permission exists and is granted to CUSTOMER; SUPPORT_AGENT is read-only
+  plus complaints; ADMIN has no banking tools. The tool-gateway checks the
+  token's roles before confirmation and before the adapter.
+- **Audit:** every execution is persisted (`requires_approval`, `succeeded`,
+  `failed`, `denied`) with masked arguments; persistence failures are logged
+  at ERROR and never fail the request; `/admin/audit` shows it to admins.
+- **Dashboard reads** (`/accounts`, `/cards`) go through the tool-gateway with
+  a signed token (permissions + audit); the api-gateway holds no banking key.
+- **Frontend:** API URL from `NEXT_PUBLIC_API_URL` (build arg), access token
+  in memory only, silent refresh through the HttpOnly cookie (one shared
+  refresh request, retried once on 401), "My cards" panel, Cancel deletes the
+  server-side pending action, admin audit table.
 - **AI agent:**
   - Model gateway (`ai-agent/app/llm/`): one async interface for Ollama,
     Gemini, OpenAI and Anthropic (LangChain `bind_tools` + `ainvoke`), a
@@ -131,54 +155,42 @@ How to read it:
 
 ## Remaining work
 
-1. **Service-to-service auth for tool-gateway and RAG.** Internal services are
-   no longer published on host ports, but on the Compose network they still
-   accept any caller: anything that reaches tool-gateway can execute a tool
-   for any `customer_id`. Needs signed service tokens (or mTLS).
-2. **Enforce `tool.permission` against roles.** Tools declare a permission,
-   but `authorization_service.verify_permission` only checks one is declared.
-   The tool codes (`account.balance.read`, `card.transactions.read`, …) also
-   do not match the codes seeded in the `permission` table (`account.read`,
-   `transaction.read`, …), so the two lists need reconciling first.
-3. **Write audit records to `audit_log` / `tool_execution`.** Today
-   `tool-gateway` only logs audit events. The tables and the api-gateway ORM
-   models exist and match the schema.
-4. **`GET /accounts` bypasses the banking adapter.** `api-gateway/app/api/routes/accounts.py`
-   calls synthetic-bank directly with its internal key, breaking the provider
-   abstraction. It should go through banking-adapter (or tool-gateway).
-5. **Observability:** OpenTelemetry traces across services (correlation IDs
+1. **Observability:** OpenTelemetry traces across services (correlation IDs
    are already propagated), Prometheus metrics, Grafana dashboards. LLM
-   latency and fallback rates are logged but not measured.
-6. **Deployment:** Terraform / Kubernetes (EKS) per the spec; production
-   secrets management; non-default `JWT_SECRET` and internal keys.
+   latency, fallback rates and audit-write failures are logged but not
+   measured.
+2. **Deployment:** Terraform / Kubernetes (EKS) per the spec; production
+   secrets management; non-default `JWT_SECRET`, `INTERNAL_JWT_SECRET` and
+   internal API keys.
 
-Done in Phase 5 (previously listed here): the model gateway with real LLM
-routing, the `validate_response` node, and the evaluation harness.
+Done in Phase 6 (previously items 1-4 here): service-to-service auth for
+tool-gateway and RAG, permission enforcement, persistent audit, and routing
+`/accounts` away from the synthetic bank.
 
-Also found during this work:
+Known limitations of what exists:
 
+- **Internal token design.** HS256 with a shared secret: every service that
+  verifies could also mint tokens; asymmetric signing (api-gateway holds the
+  private key) would remove that. Tokens are not single-use (`jti` is issued
+  but not tracked), so a stolen token can be replayed for up to 60 s. The
+  ai-agent forwards the token without verifying it itself. Requests rejected
+  with 401 are logged but not written to `audit_log` (there is no trusted
+  identity to attribute them to).
+- **Support agents** have read permissions but no way to act on a customer:
+  there is no UI or token flow for "support agent working on customer X".
+- **Admin "Users" page** is a placeholder.
 - **Small local models are slow.** `qwen2.5:7b` on a laptop RTX 3050 (4 GB)
-  runs about 55% on CPU: ~7 s per routing call, ~20 s for the first call
-  while the model loads. A knowledge question with an LLM answer makes two
-  calls.
-- **Ollama GPU crash.** Ollama 0.40.5's `cuda_v13` backend crashed on this GPU
-  (`CUDA error: shared object initialization failed`); `OLLAMA_LLM_LIBRARY=cuda_v12`
-  works (see README).
-- **Evaluation dataset** is self-authored and small (82 prompts); it should
-  grow with real (synthetic) transcripts and be reviewed independently.
-- **Cards in the UI.** The agent can list cards (`card.list`), but the
-  dashboard still only shows accounts.
+  runs about 55% on CPU: ~7 s per routing call, ~20 s for the first call.
+  Compose lowers `LLM_TIMEOUT_SECONDS` to 25 so a whole turn fits inside the
+  60 s internal token (verified: the e2e suite passes with Ollama and no token
+  expired).
+- **Ollama GPU crash.** Ollama 0.40.x's `cuda_v13` backend crashed on this GPU;
+  `OLLAMA_LLM_LIBRARY=cuda_v12` works (see README).
+- **Evaluation dataset** is self-authored and small (82 prompts); treat it as a
+  regression baseline, not an independent benchmark.
 - **Seeded users cannot log in.** The 104 users from the synthetic seed have
   non-bcrypt password hashes; only the three demo users can log in.
-- **Frontend:** API URL hard-coded to `http://localhost:8001`
-  (`NEXT_PUBLIC_API_URL` is set but unused); access token in `localStorage`;
-  refresh tokens are issued but the UI never refreshes.
 - **Agent state** uses an in-process `MemorySaver`: lost on restart, not
   shared across replicas.
-- **Admin pages** for audit and users return empty placeholder lists.
-- **Pending-action cancel** is client-side only; the stored action simply
-  expires after 5 minutes.
-- **Tool catalogue snapshot.** The agent's offline doubles use
-  `ai-agent/app/testing/tool_catalogue.json`, exported from the real
-  tool-gateway with `evaluation/export_tool_catalogue.py`; it must be
-  re-exported when tools change (nothing checks this automatically yet).
+- **Pending actions** expire after 5 minutes; Cancel now deletes them
+  server-side.

@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.internal_auth import InternalIdentity, require_internal_identity, tenant_from_token
 from app.models import Document, DocumentChunk
 from app.services.rag_service import rag_service
 
@@ -15,10 +16,11 @@ router = APIRouter(prefix="/api/v1/rag", tags=["RAG"])
 @router.get("/search")
 async def search_documents(
     query: str,
-    tenant_id: uuid.UUID,
+    tenant_id: uuid.UUID | None = None,
     limit: int = Query(default=5, ge=1, le=20),
     similarity_threshold: float | None = Query(default=None, ge=0.0, le=1.0),
     db: AsyncSession = Depends(get_db),
+    identity: InternalIdentity = Depends(require_internal_identity),
 ):
     """
     Search published document chunks for the tenant by cosine similarity.
@@ -26,6 +28,7 @@ async def search_documents(
     Only chunks with similarity >= similarity_threshold are returned
     (default: settings.search_similarity_threshold), best match first.
     """
+    tenant_id = tenant_from_token(identity, tenant_id)
     threshold = (
         similarity_threshold
         if similarity_threshold is not None

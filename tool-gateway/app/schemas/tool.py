@@ -160,9 +160,10 @@ class ToolExecutionRequest(BaseModel):
 
     tool_name: str
 
-    tenant_id: UUID
-    customer_id: UUID
-
+    # Identity comes from the X-Internal-Token. These fields are optional and,
+    # when sent, must match the token exactly (otherwise 403).
+    tenant_id: UUID | None = None
+    customer_id: UUID | None = None
     user_id: UUID | None = None
     conversation_id: UUID | None = None
     channel: str | None = None

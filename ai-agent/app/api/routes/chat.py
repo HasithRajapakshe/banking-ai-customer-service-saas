@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request
 
+from app.core.internal_token import INTERNAL_TOKEN_HEADER, current_internal_token
 from app.graph.workflow import agent_graph
 from app.schemas.chat import ChatRequest, ChatResponse
 
@@ -9,6 +10,15 @@ router = APIRouter(prefix="/api/v1/agent", tags=["AI Agent"])
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat(payload: ChatRequest, request: Request):
+    # Forwarded unchanged to tool-gateway and rag, which verify it.
+    token_scope = current_internal_token.set(request.headers.get(INTERNAL_TOKEN_HEADER))
+    try:
+        return await _run(payload, request)
+    finally:
+        current_internal_token.reset(token_scope)
+
+
+async def _run(payload: ChatRequest, request: Request) -> ChatResponse:
     state = await agent_graph.ainvoke(
         {
             "message": payload.message,
