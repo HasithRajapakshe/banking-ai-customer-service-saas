@@ -1,14 +1,15 @@
 import uuid
 import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, desc
 
-from app.api.dependencies import get_current_active_user
+from app.api.dependencies import get_current_active_user, get_current_user_roles
 from app.core.database import get_db
-from app.models import AppUser, Conversation, Message
+from app.core.internal_token import sign_internal_token
+from app.models import AppUser, Conversation, Message, Role
 from app.services.agent_client import ai_agent_client
 from app.services.pending_action_service import PendingAction, pending_action_service
 
@@ -86,11 +87,28 @@ async def get_messages(
     msgs = await db.execute(stmt_msgs)
     return msgs.scalars().all()
 
+@router.delete("/conversations/{conversation_id}/pending-action", status_code=204)
+async def cancel_pending_action(
+    conversation_id: uuid.UUID,
+    current_user: AppUser = Depends(get_current_active_user),
+):
+    """Cancel: discard the action waiting for confirmation in this conversation.
+
+    Only the user who started it can discard it; for anyone else this is a
+    no-op that reveals nothing.
+    """
+    pending = await pending_action_service.get(conversation_id)
+    if pending is not None and pending.user_id == current_user.id and pending.tenant_id == current_user.tenant_id:
+        await pending_action_service.discard(conversation_id)
+    return Response(status_code=204)
+
+
 @router.post("")
 async def chat_with_agent(
     payload: ChatRequest,
     request: Request,
     current_user: AppUser = Depends(get_current_active_user),
+    roles: list[Role] = Depends(get_current_user_roles),
     db: AsyncSession = Depends(get_db),
 ):
     correlation_id = getattr(request.state, "correlation_id", str(uuid.uuid4()))
@@ -168,7 +186,11 @@ async def chat_with_agent(
             challenge_code=pending.challenge_code,
         )
 
-    data = await ai_agent_client.chat(agent_payload, correlation_id)
+    # Identity for every internal hop of this turn (agent -> tool-gateway / rag).
+    internal_token = sign_internal_token(
+        current_user, [r.role_code for r in roles], conversation_id=payload.conversation_id
+    )
+    data = await ai_agent_client.chat(agent_payload, correlation_id, internal_token)
 
     # 4. Save agent message
     agent_now = datetime.datetime.now(datetime.timezone.utc)

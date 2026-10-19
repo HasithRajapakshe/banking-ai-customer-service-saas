@@ -1,89 +1,58 @@
-import httpx
-from fastapi import APIRouter, Depends, HTTPException, Request
+"""Accounts for the dashboard, read through the Tool Gateway (not the bank directly)."""
 
-from app.api.dependencies import get_current_active_user
-from app.core.config import settings
-from app.models import AppUser
+import uuid
+
+from fastapi import APIRouter, Depends, Query, Request
+
+from app.api.dependencies import get_current_active_user, get_current_user_roles
+from app.core.internal_token import sign_internal_token
+from app.models import AppUser, Role
+from app.services.tool_gateway_client import tool_gateway_client
 
 router = APIRouter(prefix="/api/v1/accounts", tags=["Accounts"])
 
 
-async def proxy_request(request: Request, current_user: AppUser, method: str, path: str, params: dict = None):
-    if not current_user.customer_id:
-        raise HTTPException(status_code=403, detail="User is not a customer")
+def _correlation_id(request: Request) -> str:
+    return getattr(request.state, "correlation_id", None) or str(uuid.uuid4())
 
-    correlation_id = getattr(request.state, "correlation_id", "req-123")
-    if path == "":
-        url = f"{settings.synthetic_bank_base_url}/api/v1/customers/{current_user.customer_id}/accounts"
-    else:
-        url = f"{settings.synthetic_bank_base_url}/api/v1/accounts{path}"
 
-    async with httpx.AsyncClient() as client:
-        try:
-            response = await client.request(
-                method,
-                url,
-                params=params,
-                headers={
-                    "X-Correlation-ID": correlation_id,
-                    "X-Tenant-ID": str(current_user.tenant_id),
-                    "X-Customer-ID": str(current_user.customer_id),
-                    "X-Internal-API-Key": settings.synthetic_bank_api_key,
-                },
-                timeout=10.0
-            )
-            if response.status_code == 404:
-                raise HTTPException(status_code=404, detail="Resource not found")
-            if response.status_code == 403:
-                raise HTTPException(status_code=403, detail="Forbidden")
-            response.raise_for_status()
-            return response.json()
-        except HTTPException:
-            raise
-        except httpx.HTTPStatusError as exc:
-            if exc.response.status_code in (404, 403):
-                raise HTTPException(status_code=exc.response.status_code, detail=exc.response.text)
-            import logging
-            logging.error(f"Failed to fetch accounts from synthetic-bank: {exc.response.text}")
-            raise HTTPException(status_code=500, detail="Internal server error")
-        except Exception as exc:
-            import logging
-            logging.error("Failed to fetch accounts: %s", exc)
-            raise HTTPException(status_code=500, detail="Internal server error")
+async def _run(request: Request, user: AppUser, roles: list[Role], tool: str, arguments: dict):
+    token = sign_internal_token(user, [r.role_code for r in roles])
+    return await tool_gateway_client.run(tool, arguments, token=token, correlation_id=_correlation_id(request))
 
 
 @router.get("")
 async def list_accounts(
     request: Request,
     current_user: AppUser = Depends(get_current_active_user),
+    roles: list[Role] = Depends(get_current_user_roles),
 ):
-    """Proxy to Synthetic Bank to list accounts for the current customer."""
+    """The current customer's accounts (account.list)."""
     if not current_user.customer_id:
         return []
-    return await proxy_request(request, current_user, "GET", "")
+    return await _run(request, current_user, roles, "account.list", {"limit": 100, "offset": 0})
 
 
 @router.get("/{account_id}")
 async def get_account(
-    account_id: str,
+    account_id: uuid.UUID,
     request: Request,
     current_user: AppUser = Depends(get_current_active_user),
+    roles: list[Role] = Depends(get_current_user_roles),
 ):
-    return await proxy_request(request, current_user, "GET", f"/{account_id}")
+    return await _run(request, current_user, roles, "account.get_details", {"account_id": str(account_id)})
 
 
 @router.get("/{account_id}/transactions")
 async def get_account_transactions(
-    account_id: str,
+    account_id: uuid.UUID,
     request: Request,
     current_user: AppUser = Depends(get_current_active_user),
-    limit: int = 20,
-    offset: int = 0,
+    roles: list[Role] = Depends(get_current_user_roles),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
 ):
-    return await proxy_request(
-        request, 
-        current_user, 
-        "GET", 
-        f"/{account_id}/transactions",
-        params={"limit": limit, "offset": offset}
+    return await _run(
+        request, current_user, roles, "account.get_transactions",
+        {"account_id": str(account_id), "limit": limit, "offset": offset},
     )

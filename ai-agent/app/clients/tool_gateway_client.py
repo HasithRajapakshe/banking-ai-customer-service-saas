@@ -4,6 +4,7 @@ from typing import Any
 import httpx
 
 from app.core.config import settings
+from app.core.internal_token import internal_token_headers
 
 
 class ToolGatewayClient:
@@ -58,7 +59,7 @@ class ToolGatewayClient:
         assert self._client is not None
         response = await self._client.post(
             "/api/v1/tools/execute",
-            headers={"X-Correlation-ID": correlation_id},
+            headers={"X-Correlation-ID": correlation_id, **internal_token_headers()},
             json={
                 "tool_name": tool_name,
                 "tenant_id": tenant_id,
@@ -71,8 +72,30 @@ class ToolGatewayClient:
                 "challenge_code": challenge_code,
             },
         )
+        if response.status_code in (401, 403):
+            # Refused by the gateway (token or permission): a failed tool
+            # result, so the graph answers safely instead of crashing.
+            return refused_result(tool_name, response, correlation_id)
         response.raise_for_status()
         return response.json()
+
+
+def refused_result(tool_name: str, response: httpx.Response, correlation_id: str) -> dict[str, Any]:
+    try:
+        body = response.json()
+    except ValueError:
+        body = {}
+    if isinstance(body, dict) and "success" in body:
+        return body  # already a ToolResult (e.g. PERMISSION_DENIED)
+    detail = body.get("detail") if isinstance(body, dict) else None
+    error = detail if isinstance(detail, dict) and "code" in detail else {
+        "code": f"HTTP_{response.status_code}", "message": "The request was refused.",
+    }
+    return {
+        "success": False, "tool_name": tool_name, "risk_level": "LOW", "data": None,
+        "error": error, "correlation_id": correlation_id,
+        "requires_confirmation": False, "confirmation_challenge": None, "executed": False,
+    }
 
 
 tool_gateway_client = ToolGatewayClient()

@@ -1,23 +1,28 @@
 """End-to-end test against the running Compose stack.
 
+Run it inside the Compose network (tool-gateway is not published to the host):
+
     docker compose up -d --build
-    pip install -r scripts/requirements-e2e.txt
-    python -m pytest scripts/e2e_test.py -v
+    docker run --rm --network container:api-gateway -v "$PWD:/repo" -w /repo python:3.12-slim \
+      sh -c "pip install -q -r scripts/requirements-e2e.txt && python -m pytest -v scripts/e2e_test.py"
 
-Every check goes through the public API Gateway, so banking actions travel the
+Customer flows go through the public API Gateway, so banking actions travel the
 real path: API Gateway -> AI Agent -> Tool Gateway -> Banking Adapter ->
-Synthetic Bank.
+Synthetic Bank. The attack tests call the Tool Gateway directly, as a
+compromised internal service would, and must be rejected by the token check.
 
-Test setup only: no public API lists a customer's cards, so the card under
-test is looked up directly in the demo database. Blocking it changes demo
-data, so the fixture restores the card to "active" afterwards (and before the
-test, if an earlier run was interrupted).
+Blocking a card changes demo data, so the fixture restores it to "active"
+afterwards (and before the test, if an earlier run was interrupted); that is
+the only direct database write.
 """
 
 import os
 import uuid
 
+import time
+
 import httpx
+import jwt
 import psycopg
 import pytest
 
@@ -26,6 +31,10 @@ DATABASE_URL = os.environ.get(
     "E2E_DATABASE_URL",
     "postgresql://banking_app:change_me_in_production@localhost:5432/banking_ai",
 )
+TOOL_GATEWAY_URL = os.environ.get("E2E_TOOL_GATEWAY_URL", "http://tool-gateway:8003")
+# The Compose default; an attacker who stole it could mint tokens, which is why
+# it must be set to a real secret outside development.
+INTERNAL_JWT_SECRET = os.environ.get("E2E_INTERNAL_JWT_SECRET", "change-this-internal-service-secret")
 PASSWORD = "password123"
 
 
@@ -44,6 +53,8 @@ class User:
         me = client.get(f"{API_URL}/auth/me", headers=self.headers)
         assert me.status_code == 200, me.text
         self.customer_id = me.json()["customer_id"]
+        self.user_id = me.json()["id"]
+        self.tenant_id = me.json()["tenant_id"]
 
     def get(self, path: str) -> httpx.Response:
         return self.client.get(f"{API_URL}{path}", headers=self.headers)
@@ -84,13 +95,10 @@ def bob(client) -> User:
 @pytest.fixture
 def alice_card(alice):
     """Alice's card as (id, last4); active for the test, restored afterwards."""
+    cards = ok_json(alice.get("/cards"))
+    assert cards, "alice has no card in the demo data"
+    card_id, last4 = cards[0]["id"], cards[0]["card_last4"]
     with psycopg.connect(DATABASE_URL, autocommit=True) as conn:
-        row = conn.execute(
-            "SELECT id, card_last4 FROM card WHERE customer_id = %s ORDER BY card_last4 LIMIT 1",
-            (alice.customer_id,),
-        ).fetchone()
-        assert row is not None, "alice has no card in the demo data"
-        card_id, last4 = str(row[0]), row[1]
         conn.execute("UPDATE card SET status = 'active', blocked_at = NULL WHERE id = %s", (card_id,))
 
     yield card_id, last4
@@ -194,3 +202,82 @@ def test_client_cannot_pick_a_tool_or_self_confirm(alice, alice_card):
     )
     assert resp.status_code == 422
     assert card_status_via_agent(alice, card_id) == "active"
+
+
+# =========================
+# Phase 6: cards API, audit trail, attacks on the Tool Gateway
+# =========================
+
+
+def test_alice_lists_only_her_own_cards(alice, bob):
+    alice_cards = ok_json(alice.get("/cards"))
+    bob_cards = ok_json(bob.get("/cards"))
+    assert alice_cards and bob_cards
+    assert {c["id"] for c in alice_cards}.isdisjoint({c["id"] for c in bob_cards})
+
+
+def internal_token(user, *, customer_id=None, expires_in=60, secret=INTERNAL_JWT_SECRET) -> str:
+    now = int(time.time())
+    return jwt.encode({
+        "iss": "api-gateway", "aud": "internal-services", "sub": user.user_id, "iat": now,
+        "exp": now + expires_in, "tenant_id": user.tenant_id, "user_id": user.user_id,
+        "customer_id": customer_id or user.customer_id, "roles": ["CUSTOMER"], "conversation_id": None,
+    }, secret, algorithm="HS256")
+
+
+def call_tool_gateway(tool: str, arguments: dict, token: str | None, **identity) -> httpx.Response:
+    headers = {"X-Internal-Token": token} if token else {}
+    return httpx.post(f"{TOOL_GATEWAY_URL}/api/v1/tools/execute",
+                      json={"tool_name": tool, "arguments": arguments, **identity}, headers=headers, timeout=30)
+
+
+def test_tool_gateway_rejects_cross_customer_attacks(alice, bob, alice_card):
+    card_id, _ = alice_card
+    block = {"card_id": card_id}
+
+    # No token, a forged token and an expired token: 401.
+    assert call_tool_gateway("card.block", block, None, customer_id=alice.customer_id).status_code == 401
+    assert call_tool_gateway("card.block", block, internal_token(bob, secret="guessed")).status_code == 401
+    assert call_tool_gateway("card.block", block, internal_token(bob, expires_in=-120)).status_code == 401
+
+    # Bob's genuine token, claiming Alice's customer in the body: 403.
+    resp = call_tool_gateway("card.block", block, internal_token(bob), customer_id=alice.customer_id)
+    assert resp.status_code == 403, resp.text
+    assert resp.json()["detail"]["code"] == "IDENTITY_MISMATCH"
+    # ...and the attempt is in the audit trail, attributed to Bob.
+    with psycopg.connect(DATABASE_URL) as conn:
+        attempts = conn.execute(
+            "SELECT count(*) FROM tool_execution WHERE user_id = %s AND error_code = 'IDENTITY_MISMATCH' "
+            "AND status = 'denied' AND requested_at > now() - interval '1 minute'", (bob.user_id,)).fetchone()[0]
+    assert attempts >= 1
+
+    # Bob's genuine token on Alice's card: runs as Bob, so the bank finds nothing.
+    resp = call_tool_gateway("card.get_details", block, internal_token(bob))
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["success"] is False
+    assert resp.json()["executed"] is True
+
+    assert card_status_via_agent(alice, card_id) == "active"
+
+
+def test_tool_executions_are_audited_and_visible_to_admin(client, alice, alice_card):
+    card_id, _ = alice_card
+    conversation_id = str(uuid.uuid4())
+    held = ok_json(alice.chat(conversation_id, f"Block my card {card_id}"))
+    ok_json(alice.chat(conversation_id, "Confirm", held["confirmation_challenge"]))
+
+    with psycopg.connect(DATABASE_URL) as conn:
+        statuses = [row[0] for row in conn.execute(
+            "SELECT status FROM tool_execution WHERE conversation_id = %s AND tool_name = 'card.block' "
+            "ORDER BY requested_at", (conversation_id,)).fetchall()]
+        actions = {row[0] for row in conn.execute(
+            "SELECT a.action FROM audit_log a JOIN tool_execution t ON t.id = a.resource_id "
+            "WHERE t.conversation_id = %s", (conversation_id,)).fetchall()}
+    assert statuses == ["requires_approval", "succeeded"]
+    assert {"tool.requires_approval", "tool.succeeded"} <= actions
+
+    admin = User(client, "admin@example.com")
+    page = ok_json(admin.get("/admin/audit?limit=50"))
+    assert page["total"] >= 2
+    assert any(item["metadata"].get("conversation_id") == conversation_id for item in page["items"])
+    assert alice.get("/admin/audit").status_code == 403

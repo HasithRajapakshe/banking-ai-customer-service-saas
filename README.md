@@ -19,18 +19,19 @@ flowchart LR
     user([Browser]) --> fe[frontend<br/>Next.js :3000]
     fe --> gw[api-gateway<br/>FastAPI :8001<br/>JWT, RBAC, rate limit]
 
-    gw --> agent[ai-agent<br/>LangGraph :8004<br/>LLM or keyword routing,<br/>response validation]
-    gw -- admin: upload / list docs --> rag
-    gw -. "/accounts (bypasses adapter,<br/>known limitation)" .-> bank
+    gw -- "chat (+ internal token)" --> agent[ai-agent<br/>LangGraph :8004<br/>LLM or keyword routing,<br/>response validation]
+    gw -- "admin docs (+ token)" --> rag
+    gw -- "/accounts, /cards (+ token)" --> tg
 
     agent -. "model gateway<br/>(optional)" .-> llm[(LLM<br/>Ollama / Gemini /<br/>OpenAI / Anthropic)]
-    agent -- policy questions --> rag[rag<br/>pgvector :8005]
-    agent -- every banking action --> tg[tool-gateway :8003<br/>26 tools, risk levels,<br/>confirmation challenges]
+    agent -- "policy questions (+ token)" --> rag[rag<br/>pgvector :8005<br/>verifies token]
+    agent -- "every banking action (+ token)" --> tg[tool-gateway :8003<br/>verifies token, RBAC,<br/>confirmation, audit]
     tg --> adapter[banking-adapter :8002<br/>provider abstraction]
     adapter --> bank[synthetic-bank :8000<br/>ownership checks]
 
     gw --> redis[(Redis 7<br/>rate limits, sessions,<br/>pending actions)]
     tg --> redis
+    tg -- "audit_log, tool_execution" --> pg
     gw --> pg[(PostgreSQL 16 + pgvector)]
     rag --> pg
     bank --> pg
@@ -43,6 +44,14 @@ flowchart LR
 database start only after they exit successfully. Only the frontend (3000)
 and api-gateway (8001) are published to the host (plus Postgres 5432 for
 local tooling); every other service is reachable only on the Compose network.
+
+**Service-to-service identity.** For every request the api-gateway signs a
+short-lived internal JWT (60 s, `INTERNAL_JWT_SECRET`, separate from the user
+`JWT_SECRET`) carrying tenant, customer, user, roles and conversation. The
+agent forwards it unchanged; tool-gateway and rag verify it and take identity
+**only** from it: a missing, expired or tampered token is a 401, and a request
+whose body names a different tenant/customer/user is a 403. banking-adapter and
+synthetic-bank keep their internal API keys.
 
 ## Features
 
@@ -74,8 +83,18 @@ local tooling); every other service is reachable only on the Compose network.
   the pending action server-side per conversation, so the browser can only
   confirm it, never choose or alter it. The UI shows a confirm card such as
   "Block card ending 6768".
-- **RBAC** — global roles `CUSTOMER`, `SUPPORT_AGENT`, `ADMIN`; admin routes
-  require `knowledge.manage`, `audit.read` or `users.manage`.
+- **RBAC, enforced at the tool-gateway** — global roles `CUSTOMER`,
+  `SUPPORT_AGENT`, `ADMIN` (Alembic revision 0002). Every tool declares a
+  permission, and a tool runs only if one of the token's roles grants it;
+  otherwise 403 and the adapter is never called. Customers can use all
+  self-service tools; support agents can read but not move money or block
+  cards; admins have no banking tools. Admin routes require
+  `knowledge.manage`, `audit.read` or `users.manage`.
+- **Persistent audit** — every tool execution (held, executed, failed, denied,
+  including identity mismatches) is written to `tool_execution` and
+  `audit_log`; an audit-store outage is logged loudly and never breaks the
+  request. Admins see it on the admin page (`/admin/audit`, paginated,
+  tenant-scoped).
 - **Tenant isolation and ownership** — every query is scoped by tenant, and
   the synthetic bank only returns a customer's own accounts, cards and loans.
 
@@ -196,10 +215,11 @@ docker run --rm --network ci-net -e DATABASE_URL=postgresql+asyncpg://test:test@
 ```
 
 **End-to-end** (against the running stack from the quick start; blocks
-Alice's card, then restores it):
+Alice's card, then restores it). It runs inside the Compose network because
+its attack tests call tool-gateway directly:
 
 ```bash
-docker run --rm --network banking-ai-customer-service-saas_default -e E2E_API_URL=http://api-gateway:8001/api/v1 -e E2E_DATABASE_URL=postgresql://banking_app:change_me_in_production@postgres:5432/banking_ai -v "${PWD}:/repo:ro" -w /repo python:3.12-slim sh -c "pip install -q -r scripts/requirements-e2e.txt && python -m pytest -v scripts/e2e_test.py"
+docker run --rm --network container:api-gateway -e E2E_API_URL=http://api-gateway:8001/api/v1 -e E2E_DATABASE_URL=postgresql://banking_app:change_me_in_production@postgres:5432/banking_ai -v "${PWD}:/repo:ro" -w /repo python:3.12-slim sh -c "pip install -q -r scripts/requirements-e2e.txt && python -m pytest -v scripts/e2e_test.py"
 ```
 
 Use your own `POSTGRES_PASSWORD` in `E2E_DATABASE_URL` if `.env` changes it.
@@ -234,19 +254,20 @@ Latest results: [evaluation/results/](evaluation/results/).
 
 CI ([.github/workflows/ci.yml](.github/workflows/ci.yml)) runs all of the
 above except the real-model evaluation: one job per backend service (with
-Redis), the schema tests (with pgvector), the e2e test on a fresh
-`docker compose up` (keyword router), the evaluation with the keyword router
-and the fake LLM, the frontend checks, and a compose build. Any failing test
-fails the build. CI never needs a real LLM or API key.
+Redis), the schema/RBAC/audit-SQL tests (with pgvector), the e2e test on a
+fresh `docker compose up` (keyword router), a check that the agent's tool
+catalogue snapshot matches the real tool-gateway, the evaluation with the
+keyword router and the fake LLM, the frontend checks, and a compose build. Any
+failing test fails the build. CI never needs a real LLM or API key.
 
 ## Project structure
 
 | Path | Contents |
 |---|---|
-| `frontend/` | Next.js customer dashboard (chat, accounts, confirm card) and admin knowledge-base page |
-| `api-gateway/` | Public API: login/JWT, RBAC, rate limiting, chat persistence, pending-action store |
+| `frontend/` | Next.js customer dashboard (chat, accounts, my cards, confirm card) and admin page (knowledge base, audit log) |
+| `api-gateway/` | Public API: login/JWT, RBAC, rate limiting, chat persistence, pending-action store; signs internal tokens |
 | `ai-agent/` | LangGraph agent: guardrails, LLM/keyword routing, reference resolution, RAG answers, response validation; model gateway in `app/llm/` |
-| `tool-gateway/` | The only way to banking data: 26 tools, risk levels, Redis confirmation challenges |
+| `tool-gateway/` | The only way to banking data: 26 tools, token verification, permission checks, confirmation challenges, persistent audit |
 | `banking-adapter/` | Provider abstraction between tools and a bank API (synthetic provider today) |
 | `synthetic-bank/` | Simulated core banking API with tenant and customer ownership checks |
 | `rag/` | Document ingestion, embeddings, pgvector search, embedding backfill job |
@@ -262,27 +283,20 @@ fails the build. CI never needs a real LLM or API key.
 This is a demonstration environment, not production. The main gaps (full
 list in [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md)):
 
-- **No service-to-service authentication.** Internal services are no longer
-  published on host ports, but they still trust any caller on the Compose
-  network: anything that can reach tool-gateway can call a tool for any
-  `customer_id`.
+- **The internal token uses a shared secret (HS256).** Any service holding
+  `INTERNAL_JWT_SECRET` could mint tokens; asymmetric keys (api-gateway signs,
+  others only verify) would remove that. The development default secret must
+  be replaced outside development. Tokens are not single-use (`jti` is not
+  tracked), so one can be replayed within its 60 s. The ai-agent forwards the
+  token but does not verify it itself.
 - **Without a model the agent is keyword-based**, and misses most paraphrases
   and Singlish (see the evaluation results). A small local model
   (`qwen2.5:7b`) is slow on modest hardware: several seconds per message.
 - **Embeddings are mock by default** (feature hashing: matches on shared
   words, not meaning). The evaluation uses a term-overlap retrieval double, so
   its RAG numbers measure grounding, not pgvector retrieval quality.
-- `GET /accounts` in the api-gateway calls synthetic-bank directly instead of
-  going through banking-adapter.
-- Tool permissions are declared but not enforced against user roles.
-- Audit events go to logs only, not to the `audit_log` / `tool_execution`
-  tables.
-- Cards can be listed through the agent (`show my cards`), but the dashboard
-  UI still only shows accounts.
 - Only the three demo users can log in; the 104 seeded users have no usable
-  passwords.
-- The frontend calls `http://localhost:8001` directly and keeps the access
-  token in `localStorage`.
+  passwords. The admin "Users" page is still a placeholder.
 - Agent conversation state is in process memory (`MemorySaver`), so it is lost
   on restart and not shared between replicas.
 

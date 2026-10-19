@@ -6,7 +6,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.routes import auth, chat, accounts
+from app.api.routes import auth, chat, accounts, cards
 from app.core.config import settings
 from app.core.rate_limit import RateLimitExceeded, check_rate_limit
 
@@ -79,10 +79,11 @@ async def correlation_id_middleware(request: Request, call_next: Callable) -> Re
         )
 
 # Include routers
-from app.api.routes import auth, chat, accounts, admin
+from app.api.routes import auth, chat, accounts, admin, cards
 app.include_router(auth.router)
 app.include_router(chat.router)
 app.include_router(accounts.router)
+app.include_router(cards.router)
 app.include_router(admin.router)
 
 @app.get("/health", tags=["System"])

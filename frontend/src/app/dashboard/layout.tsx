@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, LayoutDashboard, CreditCard, Receipt, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiFetch, logout } from "@/lib/api";
 import type { CurrentUser } from "@/lib/types";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -11,29 +12,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [user, setUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/");
-      return;
-    }
-
-    // Fetch user profile
-    fetch("http://localhost:8001/api/v1/auth/me", {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    // After a reload there is no token in memory; apiFetch refreshes it from
+    // the HttpOnly cookie. A 401 here means the session is really gone.
+    apiFetch("/api/v1/auth/me")
       .then(res => {
         if (!res.ok) throw new Error("Unauthorized");
         return res.json();
       })
       .then(data => setUser(data))
-      .catch(() => {
-        localStorage.removeItem("token");
-        router.push("/");
-      });
+      .catch(() => router.push("/"));
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
+  const handleLogout = async () => {
+    await logout();
     router.push("/");
   };
 

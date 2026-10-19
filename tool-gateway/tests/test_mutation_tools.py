@@ -8,6 +8,8 @@ import respx
 from httpx import ASGITransport, AsyncClient, Response
 
 from app.core.config import settings
+from app.schemas.context import ToolExecutionContext
+from app.services.tool_gateway_service import tool_gateway_service
 from main import app
 from tests.conftest import (
     TEST_ACCOUNT_ID,
@@ -124,31 +126,32 @@ async def test_card_block_unconfirmed_no_downstream():
 @pytest.mark.asyncio(loop_scope="function")
 @respx.mock
 async def test_high_risk_without_user_is_refused_and_not_executed():
-    """No user_id: no challenge can be bound, so the tool is refused outright."""
+    """No user_id: no challenge can be bound, so the tool is refused outright.
+
+    Over HTTP this cannot happen (every internal token must carry user_id, see
+    test_internal_auth.py); the service keeps its own guard as defence in depth.
+    """
     route = respx.post(
         f"{BASE}/api/v1/customers/{TEST_CUSTOMER_ID}"
         f"/cards/{TEST_CARD_ID}/block"
     ).mock(return_value=Response(200, json={}))
 
-    payload = make_execute_payload(
-        "card.block",
+    context = ToolExecutionContext(
+        tenant_id=TEST_TENANT_ID, customer_id=TEST_CUSTOMER_ID, user_id=None,
+        correlation_id="no-user", roles=("CUSTOMER",),
+    )
+    result = await tool_gateway_service.execute(
+        tool_name="card.block",
+        context=context,
         arguments={"card_id": str(TEST_CARD_ID)},
         confirmed=True,
         challenge_code="TEST_CHALLENGE_CODE",
-        user_id=None,
     )
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app),
-        base_url="http://test",
-    ) as client:
-        resp = await client.post("/api/v1/tools/execute", json=payload)
-
-    data = resp.json()
-    assert data["success"] is False
-    assert data["error"]["code"] == "CONFIRMATION_REQUIRES_USER"
-    assert data["requires_confirmation"] is False
-    assert data["executed"] is False
+    assert result.success is False
+    assert result.error.code == "CONFIRMATION_REQUIRES_USER"
+    assert result.requires_confirmation is False
+    assert result.executed is False
     assert route.call_count == 0
 
 

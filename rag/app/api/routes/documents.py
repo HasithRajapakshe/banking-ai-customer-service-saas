@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.internal_auth import InternalIdentity, require_internal_identity, tenant_from_token
 from app.models import Document, DocumentChunk, DocumentVersion
 from app.schemas import DocumentResponse, DocumentUploadResponse
 from app.services.rag_service import rag_service
@@ -36,10 +37,12 @@ def _document_key(filename: str) -> str:
 
 @router.post("", response_model=DocumentUploadResponse)
 async def upload_document(
-    tenant_id: uuid.UUID = Form(...),
+    tenant_id: uuid.UUID | None = Form(default=None),
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
+    identity: InternalIdentity = Depends(require_internal_identity),
 ):
+    tenant_id = tenant_from_token(identity, tenant_id)
     content_type = file.content_type or "text/plain"
     is_pdf = "pdf" in content_type
     content_bytes = await file.read()
@@ -114,14 +117,25 @@ async def upload_document(
 
 
 @router.get("", response_model=list[DocumentResponse])
-async def list_documents(tenant_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def list_documents(
+    tenant_id: uuid.UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+    identity: InternalIdentity = Depends(require_internal_identity),
+):
+    tenant_id = tenant_from_token(identity, tenant_id)
     stmt = select(Document).where(Document.tenant_id == tenant_id, Document.status == "published")
     result = await db.execute(stmt)
     return result.scalars().all()
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)
-async def get_document(document_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def get_document(
+    document_id: uuid.UUID,
+    tenant_id: uuid.UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+    identity: InternalIdentity = Depends(require_internal_identity),
+):
+    tenant_id = tenant_from_token(identity, tenant_id)
     stmt = select(Document).where(Document.id == document_id, Document.tenant_id == tenant_id)
     doc = (await db.execute(stmt)).scalar_one_or_none()
     if not doc:
@@ -130,7 +144,13 @@ async def get_document(document_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSe
 
 
 @router.delete("/{document_id}")
-async def delete_document(document_id: uuid.UUID, tenant_id: uuid.UUID, db: AsyncSession = Depends(get_db)):
+async def delete_document(
+    document_id: uuid.UUID,
+    tenant_id: uuid.UUID | None = None,
+    db: AsyncSession = Depends(get_db),
+    identity: InternalIdentity = Depends(require_internal_identity),
+):
+    tenant_id = tenant_from_token(identity, tenant_id)
     stmt = select(Document).where(Document.id == document_id, Document.tenant_id == tenant_id)
     doc = (await db.execute(stmt)).scalar_one_or_none()
     if not doc:

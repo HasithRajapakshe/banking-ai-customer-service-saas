@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogOut, Shield, Database, Users, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { apiFetch, logout } from "@/lib/api";
 import type { CurrentUser } from "@/lib/types";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -11,42 +12,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [user, setUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      router.push("/");
-      return;
-    }
-
-    fetch("http://localhost:8001/api/v1/auth/me", {
-      headers: { Authorization: "Bearer " + token }
-    })
+    apiFetch("/api/v1/auth/me")
       .then(res => {
         if (!res.ok) throw new Error("Unauthorized");
         return res.json();
       })
       .then(data => {
         setUser(data);
-        return fetch("http://localhost:8001/api/v1/auth/me/roles", {
-          headers: { Authorization: "Bearer " + token }
-        });
+        return apiFetch("/api/v1/auth/me/roles");
       })
       .then(res => {
         if (!res.ok) throw new Error("Unauthorized");
         return res.json();
       })
-      .then(roles => {
+      .then((roles: string[]) => {
         if (!roles.includes("ADMIN")) {
            router.push("/dashboard");
         }
       })
-      .catch(() => {
-        localStorage.removeItem("token");
-        router.push("/");
-      });
+      .catch(() => router.push("/"));
   }, [router]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
+  const handleLogout = async () => {
+    await logout();
     router.push("/");
   };
 

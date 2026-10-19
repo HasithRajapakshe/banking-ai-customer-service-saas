@@ -19,15 +19,19 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
 
-    # Internal service URLs
+    # Internal service URLs. Banking data is reached only through the
+    # tool-gateway; the API Gateway holds no banking API keys.
     ai_agent_base_url: str = "http://ai-agent:8004"
     tool_gateway_base_url: str = "http://tool-gateway:8003"
-    synthetic_bank_base_url: str = "http://synthetic-bank:8000"
     rag_base_url: str = "http://rag:8005"
 
-    # Internal API keys
-    tool_gateway_api_key: str = "tool-gateway-internal-key-dev"
-    synthetic_bank_api_key: str = "change-this-to-a-secure-internal-key-in-production"
+    # Internal identity token for service-to-service calls. Its own secret,
+    # separate from jwt_secret, so a leaked user token cannot be replayed
+    # against internal services and vice versa.
+    internal_jwt_secret: str = "change-this-internal-service-secret"
+    internal_jwt_issuer: str = "api-gateway"
+    internal_jwt_audience: str = "internal-services"
+    internal_token_ttl_seconds: int = 60
 
     # Tenant config
     tenant_id: str = "f498100f-80c4-467e-84ec-ebfe5470b442"

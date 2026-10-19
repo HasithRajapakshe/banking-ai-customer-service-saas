@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     # matches lower than neural embeddings do, so keep this modest.
     search_similarity_threshold: float = 0.15
 
+    # Internal identity token signed by the API Gateway (not the user JWT).
+    internal_jwt_secret: str = "change-this-internal-service-secret"
+    internal_jwt_issuer: str = "api-gateway"
+    internal_jwt_audience: str = "internal-services"
+    internal_jwt_leeway_seconds: int = 5
+
     # Chunking
     chunk_size: int = 1000
     chunk_overlap: int = 200

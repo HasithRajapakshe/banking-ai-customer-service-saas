@@ -3,6 +3,7 @@ from typing import Any
 import httpx
 
 from app.core.config import settings
+from app.core.internal_token import internal_token_headers
 
 
 class RagClient:
@@ -35,7 +36,7 @@ class RagClient:
         try:
             response = await self._client.get(
                 "/api/v1/rag/search",
-                headers={"X-Correlation-ID": correlation_id},
+                headers={"X-Correlation-ID": correlation_id, **internal_token_headers()},
                 params={
                     "query": query,
                     "tenant_id": tenant_id,
