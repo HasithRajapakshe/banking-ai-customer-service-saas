@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { LogOut, LayoutDashboard, CreditCard, Receipt, Settings } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { LogOut, LayoutDashboard, CreditCard, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { apiFetch, logout } from "@/lib/api";
 import type { CurrentUser } from "@/lib/types";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<CurrentUser | null>(null);
 
   useEffect(() => {
@@ -39,11 +41,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const avatarLetter = displayName.charAt(0).toUpperCase();
 
+  // Only pages that exist (Settings had no backing feature).
   const navItems = [
-    { name: "Overview", icon: LayoutDashboard, active: true },
-    { name: "Cards", icon: CreditCard, active: false },
-    { name: "Transactions", icon: Receipt, active: false },
-    { name: "Settings", icon: Settings, active: false },
+    { name: "Overview", icon: LayoutDashboard, href: "/dashboard" },
+    { name: "Cards", icon: CreditCard, href: "/dashboard/cards" },
+    { name: "Transactions", icon: Receipt, href: "/dashboard/transactions" },
   ];
 
   return (
@@ -57,20 +59,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
         
         <div className="flex-1 py-6 px-4 space-y-2">
-          {navItems.map((item) => (
-            <button
-              key={item.name}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium",
-                item.active 
-                  ? "bg-primary-500/10 text-primary-500" 
-                  : "text-gray-400 hover:bg-surface-hover hover:text-white"
-              )}
-            >
-              <item.icon className="w-5 h-5" />
-              {item.name}
-            </button>
-          ))}
+          {navItems.map((item) => {
+            const active = pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium",
+                  active
+                    ? "bg-primary-500/10 text-primary-500"
+                    : "text-gray-400 hover:bg-surface-hover hover:text-white"
+                )}
+              >
+                <item.icon className="w-5 h-5" />
+                {item.name}
+              </Link>
+            );
+          })}
         </div>
 
         <div className="p-4 border-t border-surface-border">

@@ -19,6 +19,21 @@ export interface Card {
   card_type: string;
   card_last4: string;
   status: string;
+  expiry_month?: number;
+  expiry_year?: number;
+}
+
+// GET /api/v1/accounts/{id}/transactions and card transactions (adapter DTOs)
+export interface Transaction {
+  id: string;
+  amount: string;
+  currency: string;
+  description?: string | null;
+  merchant_name?: string | null;
+  transaction_type?: string;
+  direction?: "credit" | "debit";
+  status?: string;
+  transaction_at?: string;
 }
 
 // GET /api/v1/admin/audit

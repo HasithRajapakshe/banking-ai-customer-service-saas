@@ -1,59 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState, useRef } from "react";
-import { Send, CreditCard, Wallet, TrendingUp, Sparkles, User, Bot, Loader2, ShieldAlert } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { Send, CreditCard, Wallet, Sparkles, Loader2, Receipt, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
-import { v4 as uuidv4 } from "uuid";
-import { apiFetch } from "@/lib/api";
+import ChatThread from "@/components/ChatThread";
+import { fetchAccounts, fetchCards } from "@/lib/banking";
+import { label, maskNumber, money } from "@/lib/format";
+import { useAgentChat } from "@/lib/useAgentChat";
 import type { Account, Card } from "@/lib/types";
-
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  toolResult?: unknown;
-}
-
-// POST /api/v1/chat response (errors carry `detail` instead).
-interface ChatResponse {
-  message?: string;
-  data?: unknown;
-  requires_confirmation?: boolean;
-  confirmation_challenge?: string | null;
-  action_summary?: string | null;
-  detail?: unknown;
-}
-
-interface PendingConfirmation {
-  challengeCode: string;
-  summary: string;
-}
-
-async function fetchAccounts(): Promise<Account[] | null> {
-  const res = await apiFetch("/api/v1/accounts");
-  return res.ok ? res.json() : null;
-}
-
-async function fetchCards(): Promise<Card[] | null> {
-  const res = await apiFetch("/api/v1/cards");
-  return res.ok ? res.json() : null;
-}
 
 export default function Dashboard() {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [cards, setCards] = useState<Card[]>([]);
   const [loadingCards, setLoadingCards] = useState(true);
-  
-  const [messages, setMessages] = useState<Message[]>([
-    { id: "msg-0", role: "assistant", content: "Hello! I'm your Nexus AI Assistant. How can I help you manage your finances today?" }
-  ]);
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [pending, setPending] = useState<PendingConfirmation | null>(null);
-  
-  const conversationId = useRef(uuidv4());
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const refreshAccounts = useCallback(() => {
     return fetchAccounts()
@@ -78,100 +40,33 @@ export default function Dashboard() {
     refreshCards();
   }, [refreshAccounts, refreshCards]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  // Refresh after every reply in case the agent changed something (e.g. blocked a card).
+  const onActivity = useCallback(() => {
+    refreshAccounts();
+    refreshCards();
+  }, [refreshAccounts, refreshCards]);
 
-  const sendChat = async (userMessage: string, challengeCode?: string) => {
-    setMessages(prev => [...prev, { id: uuidv4(), role: "user", content: userMessage }]);
-    setIsTyping(true);
-
-    try {
-      const res = await apiFetch("/api/v1/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userMessage,
-          conversation_id: conversationId.current,
-          ...(challengeCode ? { challenge_code: challengeCode } : {}),
-        }),
-      });
-
-      const data: ChatResponse = await res.json();
-
-      if (!res.ok) {
-        setMessages(prev => [...prev, {
-          id: uuidv4(),
-          role: "assistant",
-          content: typeof data.detail === "string" ? data.detail : "The request could not be completed.",
-        }]);
-        return;
-      }
-
-      setMessages(prev => [...prev, {
-        id: uuidv4(),
-        role: "assistant",
-        content: data.message || "Done.",
-        toolResult: data.data
-      }]);
-
-      if (data.requires_confirmation && data.confirmation_challenge) {
-        setPending({
-          challengeCode: data.confirmation_challenge,
-          summary: data.action_summary || "Confirm this action",
-        });
-      }
-
-      // Refresh in case the agent did something (e.g. blocked a card)
-      refreshAccounts();
-      refreshCards();
-    } catch {
-      setMessages(prev => [...prev, {
-        id: uuidv4(),
-        role: "assistant",
-        content: "I'm having trouble connecting to the banking core right now."
-      }]);
-    } finally {
-      setIsTyping(false);
-    }
-  };
+  const chat = useAgentChat({
+    greeting: "Hello! I'm your Nexus AI Assistant. How can I help you manage your finances today?",
+    onActivity,
+  });
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-
     const userMessage = input.trim();
     setInput("");
-    await sendChat(userMessage);
-  };
-
-  const handleConfirm = async () => {
-    if (!pending) return;
-    const { challengeCode } = pending;
-    setPending(null);
-    await sendChat("Confirm", challengeCode);
-  };
-
-  const handleCancel = () => {
-    setPending(null);
-    // Discard the server-side pending action too (it would expire in 5 min).
-    apiFetch(`/api/v1/chat/conversations/${conversationId.current}/pending-action`, { method: "DELETE" })
-      .catch(e => console.error(e));
-    setMessages(prev => [...prev, {
-      id: uuidv4(),
-      role: "assistant",
-      content: "Cancelled. No action was taken.",
-    }]);
+    await chat.send(userMessage);
   };
 
   return (
     <div className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden p-6 gap-6">
-      
-      {/* Left Column: Accounts & Stats */}
+
+      {/* Left Column: Accounts & cards */}
       <div className="w-full lg:w-1/3 flex flex-col gap-6 overflow-y-auto pr-2 pb-6">
         <div>
           <h2 className="text-2xl font-semibold text-white mb-6">Financial Overview</h2>
-          
+
           <div className="grid gap-4">
             {loadingAccounts ? (
               <div className="h-32 glass-panel rounded-2xl animate-pulse flex items-center justify-center">
@@ -184,39 +79,42 @@ export default function Dashboard() {
               </div>
             ) : (
               accounts.map((acc, i) => (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.1 }}
-                  key={acc.id} 
+                  key={acc.id}
                   className="glass-panel p-6 rounded-2xl relative overflow-hidden group"
                 >
                   <div className="absolute -right-10 -top-10 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl group-hover:bg-primary-500/20 transition-all" />
-                  
+
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <p className="text-sm text-gray-400 mb-1">{acc.account_type.replace("_", " ").toUpperCase()}</p>
-                      <p className="text-xs font-mono text-gray-500">{acc.account_number}</p>
+                      <p className="text-sm text-gray-400 mb-1">{label(acc.account_type).toUpperCase()}</p>
+                      <p className="text-xs font-mono text-gray-500">{maskNumber(acc.account_number)}</p>
                     </div>
                     <div className="p-2 bg-white/5 rounded-lg border border-white/10">
                       <Wallet className="w-4 h-4 text-primary-400" />
                     </div>
                   </div>
-                  
-                  <div>
-                    <p className="text-3xl font-bold text-white tracking-tight">
-                      {acc.currency} {parseFloat(acc.current_balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
+
+                  <p className="text-3xl font-bold text-white tracking-tight">
+                    {money(acc.current_balance, acc.currency)}
+                  </p>
                 </motion.div>
               ))
             )}
           </div>
         </div>
 
-        {/* My cards */}
+        {/* My cards (summary; full list on the Cards page) */}
         <div>
-          <h2 className="text-lg font-semibold text-white mb-3">My cards</h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-semibold text-white">My cards</h2>
+            <Link href="/dashboard/cards" className="text-xs text-primary-400 hover:text-primary-300 flex items-center gap-1">
+              Manage <ChevronRight className="w-3 h-3" />
+            </Link>
+          </div>
           {loadingCards ? (
             <div className="h-20 glass-panel rounded-2xl animate-pulse flex items-center justify-center">
               <Loader2 className="w-5 h-5 animate-spin text-primary-500" />
@@ -230,8 +128,8 @@ export default function Dashboard() {
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400"><CreditCard className="w-4 h-4" /></div>
                     <div>
-                      <p className="text-sm text-white capitalize">{card.card_type} card</p>
-                      <p className="text-xs font-mono text-gray-500">•••• {card.card_last4}</p>
+                      <p className="text-sm text-white">{label(card.card_type)} card</p>
+                      <p className="text-xs font-mono text-gray-500">{maskNumber(card.card_last4)}</p>
                     </div>
                   </div>
                   <span
@@ -241,7 +139,7 @@ export default function Dashboard() {
                         : "border-red-500/30 text-red-400 bg-red-500/10"
                     }`}
                   >
-                    {card.status}
+                    {label(card.status)}
                   </span>
                 </li>
               ))}
@@ -249,22 +147,22 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Action Cards */}
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="glass-panel p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
-            <div className="p-2 bg-green-500/10 rounded-lg text-green-400"><TrendingUp className="w-4 h-4" /></div>
-            <div>
-              <p className="text-sm font-medium text-white">Invest</p>
-              <p className="text-xs text-gray-500">View options</p>
-            </div>
-          </div>
-          <div className="glass-panel p-4 rounded-xl flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
+        {/* Shortcuts (only to features that exist) */}
+        <div className="grid grid-cols-2 gap-4">
+          <Link href="/dashboard/cards" className="glass-panel p-4 rounded-xl flex items-center gap-3 hover:bg-white/5 transition-colors">
             <div className="p-2 bg-purple-500/10 rounded-lg text-purple-400"><CreditCard className="w-4 h-4" /></div>
             <div>
               <p className="text-sm font-medium text-white">Cards</p>
-              <p className="text-xs text-gray-500">Manage</p>
+              <p className="text-xs text-gray-500">Status &amp; block</p>
             </div>
-          </div>
+          </Link>
+          <Link href="/dashboard/transactions" className="glass-panel p-4 rounded-xl flex items-center gap-3 hover:bg-white/5 transition-colors">
+            <div className="p-2 bg-green-500/10 rounded-lg text-green-400"><Receipt className="w-4 h-4" /></div>
+            <div>
+              <p className="text-sm font-medium text-white">Transactions</p>
+              <p className="text-xs text-gray-500">Recent activity</p>
+            </div>
+          </Link>
         </div>
       </div>
 
@@ -287,81 +185,14 @@ export default function Dashboard() {
         </div>
 
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {messages.map((msg) => (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              key={msg.id} 
-              className={`flex gap-4 max-w-[85%] ${msg.role === "user" ? "ml-auto flex-row-reverse" : ""}`}
-            >
-              <div className={`w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${
-                msg.role === "user" ? "bg-surface-hover border border-surface-border" : "bg-primary-500/20 text-primary-400"
-              }`}>
-                {msg.role === "user" ? <User className="w-4 h-4 text-gray-400" /> : <Bot className="w-4 h-4" />}
-              </div>
-              
-              <div className={`space-y-2 ${msg.role === "user" ? "items-end" : "items-start"}`}>
-                <div className={`px-5 py-3 rounded-2xl text-sm leading-relaxed ${
-                  msg.role === "user" 
-                    ? "bg-white text-black rounded-tr-sm" 
-                    : "bg-surface border border-surface-border text-gray-200 rounded-tl-sm"
-                }`}>
-                  {msg.content}
-                </div>
-                
-                {msg.toolResult != null && (
-                  <div className="bg-black/40 border border-surface-border p-3 rounded-xl text-xs font-mono text-gray-400 overflow-x-auto max-w-full">
-                    <pre>{JSON.stringify(msg.toolResult, null, 2)}</pre>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          ))}
-          
-          {isTyping && (
-            <div className="flex gap-4 max-w-[85%]">
-              <div className="w-8 h-8 rounded-full bg-primary-500/20 text-primary-400 flex items-center justify-center">
-                <Bot className="w-4 h-4" />
-              </div>
-              <div className="px-5 py-4 rounded-2xl bg-surface border border-surface-border rounded-tl-sm flex items-center gap-1">
-                <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-                <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-                <div className="w-1.5 h-1.5 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-              </div>
-            </div>
-          )}
-          {pending && !isTyping && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              role="alertdialog"
-              aria-labelledby="confirm-title"
-              className="max-w-[85%] ml-12 p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 space-y-3"
-            >
-              <div className="flex items-center gap-2 text-amber-300 text-sm font-semibold" id="confirm-title">
-                <ShieldAlert className="w-4 h-4" /> Confirmation required
-              </div>
-              <p className="text-white text-sm">{pending.summary}</p>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  className="px-4 py-2 rounded-lg bg-amber-500 text-black text-sm font-semibold hover:bg-amber-400 transition-colors"
-                >
-                  Confirm
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCancel}
-                  className="px-4 py-2 rounded-lg border border-surface-border text-gray-300 text-sm hover:bg-white/5 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          )}
-          <div ref={messagesEndRef} />
+        <div className="flex-1 overflow-y-auto p-6">
+          <ChatThread
+            messages={chat.messages}
+            isTyping={chat.isTyping}
+            pending={chat.pending}
+            onConfirm={chat.confirm}
+            onCancel={chat.cancel}
+          />
         </div>
 
         {/* Input Area */}
@@ -376,7 +207,8 @@ export default function Dashboard() {
             />
             <button
               type="submit"
-              disabled={!input.trim() || isTyping}
+              aria-label="Send"
+              disabled={!input.trim() || chat.isTyping}
               className="absolute right-2 p-2 bg-white text-black rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:hover:bg-white transition-colors"
             >
               <Send className="w-4 h-4" />
@@ -387,7 +219,7 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-      
+
     </div>
   );
 }
