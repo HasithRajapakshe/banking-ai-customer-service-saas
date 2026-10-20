@@ -1,0 +1,266 @@
+# Local development stack. Every variable has a development default (matching
+# .env.example), so `docker compose up --build` works without a .env file.
+# Values in a .env file override these defaults.
+
+x-database-url: &database-url ${DATABASE_URL:-postgresql+asyncpg://banking_app:change_me_in_production@postgres:5432/banking_ai}
+# Signs/verifies the API Gateway's 60 s internal identity token (separate from JWT_SECRET).
+x-internal-jwt-secret: &internal-jwt-secret ${INTERNAL_JWT_SECRET:-change-this-internal-service-secret}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: banking-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-banking_ai}
+      POSTGRES_USER: ${POSTGRES_USER:-banking_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me_in_production}
+    ports:
+      - "5432:5432"
+    volumes:
+      # v2: created by Alembic (0001_initial_schema). Pre-Alembic databases lived in
+      # "postgres_data"; see README for restoring from backups/ instead.
+      - postgres_data_v2:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-banking_app} -d ${POSTGRES_DB:-banking_ai}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: banking-redis
+    # Not published to the host: services reach it as redis:6379 on the
+    # Compose network, and an unauthenticated Redis should not be exposed.
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # One-shot job: apply Alembic migrations, then load seeds (idempotent).
+  migrate:
+    build:
+      context: .
+      dockerfile: database/Dockerfile
+    container_name: migrate
+    environment:
+      DATABASE_URL: *database-url
+      TENANT_ID: ${TENANT_ID:-f498100f-80c4-467e-84ec-ebfe5470b442}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  synthetic-bank:
+    build: ./synthetic-bank
+    container_name: synthetic-bank
+    # Internal only (port 8000 on the compose network); not published to the host.
+    environment:
+      DATABASE_URL: *database-url
+      INTERNAL_API_KEY: ${SYNTHETIC_BANK_API_KEY:-synthetic-bank-internal-key-dev}
+      BANK_CODE: ${BANK_CODE:-SLBANK01}
+      TENANT_ID: ${TENANT_ID:-f498100f-80c4-467e-84ec-ebfe5470b442}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  banking-adapter:
+    build: ./banking-adapter
+    container_name: banking-adapter
+    # Internal only (port 8002 on the compose network); not published to the host.
+    environment:
+      SYNTHETIC_BANK_BASE_URL: http://synthetic-bank:8000
+      SYNTHETIC_BANK_API_KEY: ${SYNTHETIC_BANK_API_KEY:-synthetic-bank-internal-key-dev}
+      INTERNAL_API_KEY: ${BANKING_ADAPTER_API_KEY:-banking-adapter-internal-key-dev}
+    depends_on:
+      synthetic-bank:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8002/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  tool-gateway:
+    build: ./tool-gateway
+    container_name: tool-gateway
+    # Internal only (port 8003 on the compose network); not published to the host.
+    environment:
+      BANKING_ADAPTER_BASE_URL: http://banking-adapter:8002
+      BANKING_ADAPTER_API_KEY: ${BANKING_ADAPTER_API_KEY:-banking-adapter-internal-key-dev}
+      REDIS_URL: redis://redis:6379/2
+      DATABASE_URL: *database-url
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
+    depends_on:
+      banking-adapter:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # One-shot job: embed seeded knowledge chunks that have no embedding yet
+  # (idempotent; only rows WHERE embedding IS NULL are touched).
+  rag-backfill:
+    build: ./rag
+    container_name: rag-backfill
+    command: ["python", "-m", "app.backfill_embeddings"]
+    environment:
+      DATABASE_URL: *database-url
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-mock}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+
+  rag:
+    build: ./rag
+    container_name: rag-service
+    # Internal only (port 8005 on the compose network); not published to the host.
+    environment:
+      APP_ENV: development
+      DATABASE_URL: *database-url
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-mock}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
+    depends_on:
+      rag-backfill:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8005/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ai-agent:
+    build: ./ai-agent
+    container_name: ai-agent
+    # Internal only (port 8004 on the compose network); not published to the host.
+    environment:
+      APP_ENV: development
+      TOOL_GATEWAY_BASE_URL: http://tool-gateway:8003
+      RAG_BASE_URL: http://rag:8005
+      # Model gateway. "deterministic" = keyword router only (no LLM).
+      MODEL_PROVIDER: ${MODEL_PROVIDER:-ollama}
+      MODEL_NAME: ${MODEL_NAME:-qwen2.5:7b}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # A whole turn must fit inside the 60 s internal token.
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-25}
+    extra_hosts:
+      # Lets the container reach Ollama running on the host (Linux needs this;
+      # Docker Desktop provides it already).
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      tool-gateway:
+        condition: service_healthy
+      rag:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8004/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8001:8001"
+    environment:
+      APP_ENV: development
+      DATABASE_URL: *database-url
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      JWT_SECRET: ${JWT_SECRET:-change-this-to-a-long-random-secret-in-production}
+      TOOL_GATEWAY_BASE_URL: http://tool-gateway:8003
+      AI_AGENT_BASE_URL: http://ai-agent:8004
+      RAG_BASE_URL: http://rag:8005
+      TENANT_ID: ${TENANT_ID:-f498100f-80c4-467e-84ec-ebfe5470b442}
+      INTERNAL_JWT_SECRET: *internal-jwt-secret
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+      ai-agent:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8001/health')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8001
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+
+volumes:
+  postgres_data_v2:
+  redis_data:

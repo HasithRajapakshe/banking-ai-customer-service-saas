@@ -1,0 +1,14 @@
+# Local environments and caches never belong in the image.
+.venv
+venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.coverage
+htmlcov
+# Configuration comes from docker-compose environment, not a baked-in file.
+.env
+.env.*
+!.env.example

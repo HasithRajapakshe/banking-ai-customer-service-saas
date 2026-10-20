@@ -1,0 +1,724 @@
+[
+  {
+    "name": "account.get_balance",
+    "description": "Get the balance of an account belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "account.balance.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "account_id": {
+          "format": "uuid",
+          "title": "Account Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id"
+      ],
+      "title": "AccountIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "account.get_details",
+    "description": "Get details of a specific account belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "account.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "account_id": {
+          "format": "uuid",
+          "title": "Account Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "account_id"
+      ],
+      "title": "AccountIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "account.get_transactions",
+    "description": "Get transactions for a specific account belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "account.transactions.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "account_id": {
+          "format": "uuid",
+          "title": "Account Id",
+          "type": "string"
+        },
+        "limit": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "account_id"
+      ],
+      "title": "AccountTransactionsInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "account.list",
+    "description": "List all accounts belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "account.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "description": "Pagination-only input.",
+      "properties": {
+        "limit": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        }
+      },
+      "title": "ListInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "beneficiary.create",
+    "description": "Create a new beneficiary for the current customer.",
+    "risk_level": "HIGH",
+    "requires_confirmation": true,
+    "permission": "beneficiary.create",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "beneficiary_name": {
+          "maxLength": 255,
+          "minLength": 2,
+          "title": "Beneficiary Name",
+          "type": "string"
+        },
+        "bank_name": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bank Name"
+        },
+        "account_number": {
+          "maxLength": 50,
+          "minLength": 4,
+          "title": "Account Number",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beneficiary_name",
+        "account_number"
+      ],
+      "title": "BeneficiaryCreateInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "beneficiary.deactivate",
+    "description": "Deactivate a specific beneficiary belonging to the current customer.",
+    "risk_level": "HIGH",
+    "requires_confirmation": true,
+    "permission": "beneficiary.deactivate",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "beneficiary_id": {
+          "format": "uuid",
+          "title": "Beneficiary Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beneficiary_id"
+      ],
+      "title": "BeneficiaryIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "beneficiary.get",
+    "description": "Get details of a specific beneficiary belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "beneficiary.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "beneficiary_id": {
+          "format": "uuid",
+          "title": "Beneficiary Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "beneficiary_id"
+      ],
+      "title": "BeneficiaryIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "beneficiary.list",
+    "description": "List beneficiaries belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "beneficiary.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "description": "Pagination-only input.",
+      "properties": {
+        "limit": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        }
+      },
+      "title": "ListInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "card.block",
+    "description": "Block a specific card belonging to the current customer. This action is irreversible.",
+    "risk_level": "HIGH",
+    "requires_confirmation": true,
+    "permission": "card.block",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "format": "uuid",
+          "title": "Card Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "card_id"
+      ],
+      "title": "CardIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "card.get_details",
+    "description": "Get details of a specific card belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "card.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "format": "uuid",
+          "title": "Card Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "card_id"
+      ],
+      "title": "CardIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "card.get_transactions",
+    "description": "Get transactions for a specific card belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "card.transactions.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "format": "uuid",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "limit": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "card_id"
+      ],
+      "title": "CardTransactionsInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "card.list",
+    "description": "List all cards belonging to the current customer (id, card type, last 4 digits, status).",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "card.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "description": "No arguments accepted.",
+      "properties": {},
+      "title": "EmptyInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "complaint.create",
+    "description": "Create a new complaint for the current customer.",
+    "risk_level": "MEDIUM",
+    "requires_confirmation": false,
+    "permission": "complaint.create",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "maxLength": 50,
+          "minLength": 2,
+          "title": "Category",
+          "type": "string"
+        },
+        "priority": {
+          "default": "medium",
+          "enum": [
+            "low",
+            "medium",
+            "high",
+            "critical"
+          ],
+          "title": "Priority",
+          "type": "string"
+        },
+        "subject": {
+          "maxLength": 255,
+          "minLength": 3,
+          "title": "Subject",
+          "type": "string"
+        },
+        "description": {
+          "maxLength": 5000,
+          "minLength": 5,
+          "title": "Description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "subject",
+        "description"
+      ],
+      "title": "ComplaintCreateInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "complaint.get",
+    "description": "Get details of a specific complaint belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "complaint.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "complaint_id": {
+          "format": "uuid",
+          "title": "Complaint Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "complaint_id"
+      ],
+      "title": "ComplaintIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "complaint.get_status",
+    "description": "Get the status of a specific complaint belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "complaint.status.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "complaint_id": {
+          "format": "uuid",
+          "title": "Complaint Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "complaint_id"
+      ],
+      "title": "ComplaintIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "complaint.list",
+    "description": "List complaints belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "complaint.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "description": "Pagination-only input.",
+      "properties": {
+        "limit": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        }
+      },
+      "title": "ListInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "customer.get_profile",
+    "description": "Get the profile of the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "customer.profile.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "description": "No arguments accepted.",
+      "properties": {},
+      "title": "EmptyInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "loan.get",
+    "description": "Get details of a specific loan belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "loan.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "loan_id": {
+          "format": "uuid",
+          "title": "Loan Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "loan_id"
+      ],
+      "title": "LoanIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "loan.get_payments",
+    "description": "Get payment history for a specific loan belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "loan.payments.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "loan_id": {
+          "format": "uuid",
+          "title": "Loan Id",
+          "type": "string"
+        },
+        "limit": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "loan_id"
+      ],
+      "title": "LoanPaymentsInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "loan.get_status",
+    "description": "Get the status of a specific loan belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "loan.status.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "loan_id": {
+          "format": "uuid",
+          "title": "Loan Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "loan_id"
+      ],
+      "title": "LoanIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "loan.list",
+    "description": "List loans belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "loan.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "description": "Pagination-only input.",
+      "properties": {
+        "limit": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        }
+      },
+      "title": "ListInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "payment.cancel",
+    "description": "Cancel a specific payment belonging to the current customer.",
+    "risk_level": "HIGH",
+    "requires_confirmation": true,
+    "permission": "payment.cancel",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "payment_id": {
+          "format": "uuid",
+          "title": "Payment Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "payment_id"
+      ],
+      "title": "PaymentIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "payment.create",
+    "description": "Create a new payment for the current customer. Requires explicit confirmation.",
+    "risk_level": "CRITICAL",
+    "requires_confirmation": true,
+    "permission": "payment.create",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "source_account_id": {
+          "format": "uuid",
+          "title": "Source Account Id",
+          "type": "string"
+        },
+        "beneficiary_id": {
+          "format": "uuid",
+          "title": "Beneficiary Id",
+          "type": "string"
+        },
+        "amount": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0.0,
+              "type": "number"
+            },
+            {
+              "type": "string"
+            }
+          ],
+          "title": "Amount"
+        },
+        "currency": {
+          "maxLength": 3,
+          "minLength": 3,
+          "title": "Currency",
+          "type": "string"
+        },
+        "payment_reference": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Payment Reference"
+        },
+        "idempotency_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Idempotency Key"
+        }
+      },
+      "required": [
+        "source_account_id",
+        "beneficiary_id",
+        "amount",
+        "currency"
+      ],
+      "title": "PaymentCreateInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "payment.get",
+    "description": "Get details of a specific payment belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "payment.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "payment_id": {
+          "format": "uuid",
+          "title": "Payment Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "payment_id"
+      ],
+      "title": "PaymentIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "payment.get_status",
+    "description": "Get the status of a specific payment belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "payment.status.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "properties": {
+        "payment_id": {
+          "format": "uuid",
+          "title": "Payment Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "payment_id"
+      ],
+      "title": "PaymentIdInput",
+      "type": "object"
+    }
+  },
+  {
+    "name": "payment.list",
+    "description": "List payments belonging to the current customer.",
+    "risk_level": "LOW",
+    "requires_confirmation": false,
+    "permission": "payment.read",
+    "input_schema": {
+      "additionalProperties": false,
+      "description": "Pagination-only input.",
+      "properties": {
+        "limit": {
+          "default": 20,
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Limit",
+          "type": "integer"
+        },
+        "offset": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Offset",
+          "type": "integer"
+        }
+      },
+      "title": "ListInput",
+      "type": "object"
+    }
+  }
+]
