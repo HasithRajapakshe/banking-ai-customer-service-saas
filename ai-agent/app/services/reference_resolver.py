@@ -38,6 +38,9 @@ class Resolution:
     # Tool to run instead (e.g. balance of "my accounts" -> account.list).
     tool_name: str | None = None
     lookups: int = 0
+    # The clarification asks the customer to pick one of their accounts/cards;
+    # their answer can complete this request (see resolve_answer).
+    awaiting_choice: bool = False
 
 
 def _card_label(card: dict[str, Any]) -> str:
@@ -72,6 +75,38 @@ class ReferenceResolver:
             fields = ", ".join(name.replace("_", " ") for name in missing)
             return Resolution(arguments=args, clarification=f"Please provide the {fields} for this request.")
         return Resolution(arguments=args)
+
+    async def resolve_answer(
+        self,
+        *,
+        tool_name: str,
+        arguments: dict[str, Any],
+        message: str,
+        context: dict[str, Any],
+    ) -> Resolution | None:
+        """Complete a request that asked "Which account/card do you mean?".
+
+        Returns the filled-in request only if the message names exactly one of
+        the customer's items (last 4 digits or type); otherwise None, and the
+        message is routed as a new request.
+        """
+        if not self._has_hint(tool_name, message):
+            return None
+        resolution = await self.resolve(
+            tool_name=tool_name, arguments=arguments, message=message, input_schema=None, context=context
+        )
+        if resolution.clarification or resolution.final_message or resolution.tool_name:
+            return None
+        return resolution
+
+    @staticmethod
+    def _has_hint(tool_name: str, message: str) -> bool:
+        text = message.lower()
+        if LAST4_RE.search(message):
+            return True
+        if tool_name in CARD_TOOLS:
+            return any(t in text for t in CARD_TYPES)
+        return any(w in text for words in ACCOUNT_TYPES.values() for w in words)
 
     @staticmethod
     def _missing_required(args: dict[str, Any], schema: dict[str, Any] | None) -> list[str]:
@@ -119,7 +154,9 @@ class ReferenceResolver:
                 return Resolution(final_message=f"I couldn't find an {what} matching that description on your profile.", lookups=1)
             return Resolution(final_message=f"You don't have an {what} on your profile.", lookups=1)
         options = "; ".join(_card_label(c) for c in candidates)
-        return Resolution(clarification=f"Which card do you mean? You have: {options}.", lookups=1)
+        return Resolution(
+            arguments=args, clarification=f"Which card do you mean? You have: {options}.", lookups=1, awaiting_choice=True
+        )
 
     async def _resolve_account(self, tool_name: str, args: dict, message: str, context: dict) -> Resolution:
         accounts = await self._list("account.list", context)
@@ -143,7 +180,9 @@ class ReferenceResolver:
             # "What's my balance?" with several accounts: show them all.
             return Resolution(tool_name="account.list", arguments={"limit": 20, "offset": 0}, lookups=1)
         options = "; ".join(_account_label(a) for a in candidates)
-        return Resolution(clarification=f"Which account do you mean? You have: {options}.", lookups=1)
+        return Resolution(
+            arguments=args, clarification=f"Which account do you mean? You have: {options}.", lookups=1, awaiting_choice=True
+        )
 
 
 reference_resolver = ReferenceResolver()

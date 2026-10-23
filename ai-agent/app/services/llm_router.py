@@ -8,8 +8,10 @@ three control functions and picks ONE. Its choice is only a proposal:
   from server-side state, and the Tool Gateway still validates arguments and
   holds every HIGH/CRITICAL tool for user confirmation;
 - arguments are filtered to the tool's schema; an ID that does not appear in
-  the user's message is dropped (and later resolved from the customer's own
-  items) so the model cannot target an ID it made up;
+  the user's latest message is dropped (and later resolved from the customer's
+  own items) so the model cannot target an ID it made up or took from history;
+- recent turns of the conversation are shown as context so follow-ups make
+  sense, but only the latest message is routed;
 - unknown tools, no tool call, or any LLM failure return None, and the caller
   falls back to the keyword router.
 """
@@ -42,6 +44,7 @@ Call exactly ONE function for the customer's latest message:
 - knowledge_search, for questions about the bank's policies, fees, procedures or products;
 - ask_clarification, when the request is ambiguous or lacks details you cannot look up;
 - general_reply, for greetings and small talk.
+Earlier messages in the conversation are context only: use them to understand a short follow-up (for example "and for my savings account?" after a request about transactions means the same request for savings), but route only the latest message.
 Rules:
 - Use an ID only if it appears in the customer's message. If they say "my card" or "my savings account" without an ID, call the tool WITHOUT that ID; the system finds it from the customer's own items.
 - Never invent IDs, amounts, account numbers or beneficiaries.
@@ -122,13 +125,18 @@ class LLMRouter:
         *,
         gateway: ModelGateway,
         catalogue: list[dict[str, Any]],
+        history: list[dict[str, str]] | None = None,
     ) -> IntentDecision | None:
         specs, by_function = build_tool_specs(catalogue)
+        messages = [ChatMessage(role="system", content=SYSTEM_PROMPT)]
+        messages += [
+            ChatMessage(role=turn["role"], content=turn["content"])
+            for turn in history or []
+            if turn.get("role") in ("user", "assistant")
+        ]
+        messages.append(ChatMessage(role="user", content=message))
         try:
-            response = await gateway.chat(
-                [ChatMessage(role="system", content=SYSTEM_PROMPT), ChatMessage(role="user", content=message)],
-                specs,
-            )
+            response = await gateway.chat(messages, specs)
         except LLMError as exc:
             logger.warning("LLM routing failed, falling back to keyword router: %s", exc)
             return None

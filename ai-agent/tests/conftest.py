@@ -1,11 +1,13 @@
 import os
 import uuid
 
+import fakeredis
 import pytest
 
 from app import llm
 from app.graph.workflow import agent_graph
 from app.llm.gateway import ModelGateway
+from app.services.conversation_memory import conversation_memory
 from app.testing.doubles import FakeRag, FakeToolGateway
 
 
@@ -22,6 +24,15 @@ def no_model_by_default():
     llm.set_model_gateway(None)
     yield
     llm.set_model_gateway(None)
+
+
+@pytest.fixture(autouse=True)
+def memory_store():
+    """A fresh in-process Redis per test for conversation memory."""
+    client = fakeredis.FakeAsyncRedis(decode_responses=True)
+    conversation_memory.use_client(client)
+    yield client
+    conversation_memory.use_client(None)
 
 
 @pytest.fixture
@@ -46,14 +57,43 @@ def use_llm(provider) -> ModelGateway:
     return gateway
 
 
-async def run_agent(message: str, **extra) -> dict:
-    conversation_id = str(uuid.uuid4())
-    state = {
-        "message": message,
+def new_conversation() -> dict:
+    """Identity of one conversation; pass it to run_agent for several turns."""
+    return {
         "tenant_id": str(uuid.uuid4()),
         "customer_id": str(uuid.uuid4()),
         "user_id": str(uuid.uuid4()),
-        "conversation_id": conversation_id,
+        "conversation_id": str(uuid.uuid4()),
+    }
+
+
+async def run_agent(message: str, conversation: dict | None = None, **extra) -> dict:
+    """One turn; a new conversation unless `conversation` is given.
+
+    Per-turn outputs are reset as the chat route does, so only the memory
+    store carries anything from one turn to the next.
+    """
+    ids = conversation or new_conversation()
+    conversation_id = ids["conversation_id"]
+    state = {
+        "message": message,
+        **ids,
+        "tool_name": None,
+        "tool_arguments": {},
+        "tool_result": None,
+        "route": None,
+        "intent": None,
+        "clarification": None,
+        "status": None,
+        "response_message": None,
+        "requires_confirmation": False,
+        "confirmation_challenge": None,
+        "action_summary": None,
+        "router": "keyword",
+        "tool_name_override": None,
+        "tool_arguments_override": {},
+        "confirmed": False,
+        "challenge_code": None,
         "channel": "web",
         "correlation_id": "test",
         "tool_calls": 0,

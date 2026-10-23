@@ -126,6 +126,25 @@ def test_alice_lists_accounts(alice):
     assert all(account["customer_id"] == alice.customer_id for account in accounts)
 
 
+def test_answer_to_which_account_shows_that_accounts_transactions(alice):
+    """Two-turn conversation: the follow-up answer completes the first request."""
+    accounts = ok_json(alice.get("/accounts"))
+    assert len(accounts) >= 2, "alice needs two accounts for this test"
+    target = accounts[-1]
+    kind = target["account_type"].replace("_", " ")
+    conversation_id = str(uuid.uuid4())
+
+    first = ok_json(alice.chat(conversation_id, "show my account transactions"))
+    assert first["status"] == "needs_clarification", first
+
+    body = ok_json(alice.chat(conversation_id, f"{kind} account ending {target['account_number'][-4:]}"))
+
+    assert body["status"] == "completed", body
+    assert body["tool_name"] == "account.get_transactions", body
+    assert isinstance(body["data"], list) and body["data"], body
+    assert all(tx["account_id"] == target["id"] for tx in body["data"])
+
+
 def test_policy_question_is_answered_from_knowledge_base(alice):
     body = ok_json(alice.chat(str(uuid.uuid4()), "What is the policy for a lost or stolen card?"))
 

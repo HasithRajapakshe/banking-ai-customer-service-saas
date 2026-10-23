@@ -94,6 +94,11 @@ export default function ToolResultView({ toolName, data }: Props) {
       if (accounts.length) body = <AccountRows accounts={accounts} />;
       break;
     }
+    case "account.get_details":
+    case "account.get_balance": {
+      if (data && typeof data === "object" && !Array.isArray(data)) body = <AccountRows accounts={[data as Account]} />;
+      break;
+    }
     case "card.list": {
       const cards = asList<Card>(data);
       if (cards.length) body = <CardRows cards={cards} />;

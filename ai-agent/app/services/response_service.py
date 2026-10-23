@@ -1,6 +1,21 @@
 from typing import Any
 
 
+def _amount(value: Any) -> str:
+    try:
+        return f"{float(value):,.2f}"
+    except (TypeError, ValueError):
+        return str(value)
+
+
+def _account_sentence(acc: dict[str, Any]) -> str:
+    typ = str(acc.get("account_type", "Account")).replace("_", " ").capitalize()
+    num = str(acc.get("account_number", ""))
+    bal = acc.get("current_balance") or acc.get("balance") or "0"
+    curr = acc.get("currency", "LKR")
+    return f"Your {typ} account ending {num[-4:]} has a balance of {curr} {_amount(bal)}."
+
+
 class ResponseService:
     def general(self, intent: str, clarification: str | None = None) -> str:
         if intent == "greeting":
@@ -15,20 +30,16 @@ class ResponseService:
             if tool_name == "account.list" and isinstance(data, list):
                 if not data:
                     return ("You have no accounts.", "completed", False)
-                lines = []
-                for acc in data:
-                    typ = acc.get("account_type", "Account").capitalize()
-                    num = acc.get("account_number", "")
-                    num_suffix = num[-4:] if len(num) >= 4 else num
-                    bal = acc.get("current_balance") or acc.get("balance") or "0"
-                    curr = acc.get("currency", "LKR")
-                    try:
-                        bal_str = f"{float(bal):,.2f}"
-                    except:
-                        bal_str = str(bal)
-                    lines.append(f"Your {typ} account ending {num_suffix} has a balance of {curr} {bal_str}.")
-                return (" ".join(lines), "completed", False)
-            
+                return (" ".join(_account_sentence(acc) for acc in data), "completed", False)
+
+            if tool_name in ("account.get_details", "account.get_balance") and isinstance(data, dict):
+                return (_account_sentence(data), "completed", False)
+
+            if tool_name == "card.get_details" and isinstance(data, dict):
+                card = " ".join(filter(None, [str(data.get("card_type") or "").capitalize(), "card"]))
+                status = str(data.get("status", "unknown")).replace("_", " ")
+                return (f"Your {card} ending {data.get('card_last4', '????')} is {status}.", "completed", False)
+
             elif tool_name in ("account.get_transactions", "card.get_transactions") and isinstance(data, list):
                 if not data:
                     return ("There are no recent transactions available.", "completed", False)

@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     llm_temperature: float = 0.0
     tool_catalogue_ttl_seconds: float = 300.0
 
+    # Conversation memory (recent turns, pending "which account?" question).
+    # Unset: the agent answers every message on its own, without memory.
+    redis_url: str | None = None
+    memory_ttl_seconds: int = 1800
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

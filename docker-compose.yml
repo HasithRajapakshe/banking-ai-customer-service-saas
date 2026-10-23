@@ -192,6 +192,8 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       # A whole turn must fit inside the 60 s internal token.
       LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-25}
+      # Conversation memory (recent turns, pending "which account?" question).
+      REDIS_URL: redis://redis:6379/3
     extra_hosts:
       # Lets the container reach Ollama running on the host (Linux needs this;
       # Docker Desktop provides it already).
@@ -200,6 +202,8 @@ services:
       tool-gateway:
         condition: service_healthy
       rag:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     healthcheck:
       test:

@@ -1,11 +1,13 @@
 """LangGraph workflow (spec section 7).
 
 START -> security_check -> classify_intent -> resolve_references -> execute_tool ─┐
-                                           -> retrieve_knowledge ──────────────────┼─> validate_response -> END
+                                           -> retrieve_knowledge ──────────────────┼─> validate_response -> remember_turn -> END
                                            -> respond_without_tool ────────────────┘
 
 Routing uses the LLM when a model provider is configured and falls back to
-the keyword router otherwise. Either way every banking action goes through
+the keyword router otherwise. Conversation memory (Redis) lets the answer to
+"Which account do you mean?" complete the original request and gives the LLM
+the recent turns; blocked messages are never remembered. Either way every banking action goes through
 the Tool Gateway, which validates arguments and holds HIGH/CRITICAL tools for
 user confirmation; nothing in this graph can confirm an action by itself.
 """
@@ -21,6 +23,7 @@ from app.clients.tool_gateway_client import tool_gateway_client
 from app.core.config import settings
 from app.graph.state import AgentState
 from app.services.action_summary import action_summary_service
+from app.services.conversation_memory import conversation_memory
 from app.services.intent_router import intent_router
 from app.services.llm_router import llm_router
 from app.services.rag_answer import answer_question
@@ -57,12 +60,41 @@ async def security_check(state: AgentState):
     return {"security_allowed": True}
 
 
+async def _continue_pending_request(state: AgentState) -> dict | None:
+    """Run the request that asked "Which account/card do you mean?" if this message answers it."""
+    pending = await conversation_memory.take_pending(state)
+    if pending is None:
+        return None
+    resolution = await reference_resolver.resolve_answer(
+        tool_name=pending["tool_name"],
+        arguments=pending.get("arguments") or {},
+        message=state["message"],
+        context=_context(state),
+    )
+    if resolution is None:
+        return None  # not an answer: route the message as a new request
+    return {
+        "router": "memory",
+        "intent": pending["tool_name"],
+        "route": "tool",
+        "tool_name": pending["tool_name"],
+        "tool_arguments": resolution.arguments,
+        "clarification": None,
+        "tool_calls": state.get("tool_calls", 0) + resolution.lookups,
+    }
+
+
 async def classify_intent(state: AgentState):
     override = state.get("tool_name_override")
     gateway = llm.get_model_gateway()
     decision, router = None, "keyword"
 
-    # A replayed confirmation (server-stored action) never goes to the LLM.
+    # A replayed confirmation (server-stored action) never uses memory or the LLM.
+    if not override:
+        continued = await _continue_pending_request(state)
+        if continued is not None:
+            return continued
+
     if gateway is not None and not override:
         try:
             catalogue = await tool_gateway_client.list_tools(state["correlation_id"])
@@ -70,7 +102,10 @@ async def classify_intent(state: AgentState):
             logger.warning("Tool catalogue unavailable, using keyword router: %s", exc)
             catalogue = None
         if catalogue is not None:
-            decision = await llm_router.route(state["message"], gateway=gateway, catalogue=catalogue)
+            history = await conversation_memory.history(state)
+            decision = await llm_router.route(
+                state["message"], gateway=gateway, catalogue=catalogue, history=history
+            )
             router = "llm" if decision is not None else "keyword_fallback"
 
     if decision is None:
@@ -116,6 +151,8 @@ async def resolve_references(state: AgentState):
         update["tool_name"] = resolution.tool_name
     if resolution.clarification:
         update.update(route="clarify", clarification=resolution.clarification)
+        if resolution.awaiting_choice:
+            await conversation_memory.save_pending(state, state["tool_name"], resolution.arguments)
     elif resolution.final_message:
         update.update(route="answered", response_message=resolution.final_message, status="completed")
     return update
@@ -222,6 +259,12 @@ async def validate(state: AgentState):
     }
 
 
+async def remember_turn(state: AgentState):
+    # Only the text the customer saw; tool data and IDs are not stored.
+    await conversation_memory.add_turn(state, state["message"], state.get("response_message") or "")
+    return {}
+
+
 def after_security(state: AgentState) -> str:
     return "blocked" if not state.get("security_allowed", False) else "continue"
 
@@ -245,6 +288,7 @@ def build_graph():
     graph.add_node("respond_without_tool", respond_without_tool)
     graph.add_node("retrieve_knowledge", retrieve_knowledge)
     graph.add_node("validate_response", validate)
+    graph.add_node("remember_turn", remember_turn)
 
     graph.add_edge(START, "security_check")
     graph.add_conditional_edges(
@@ -269,7 +313,8 @@ def build_graph():
     graph.add_edge("execute_tool", "validate_response")
     graph.add_edge("respond_without_tool", "validate_response")
     graph.add_edge("retrieve_knowledge", "validate_response")
-    graph.add_edge("validate_response", END)
+    graph.add_edge("validate_response", "remember_turn")
+    graph.add_edge("remember_turn", END)
     return graph.compile(checkpointer=MemorySaver())
 
 
